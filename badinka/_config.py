@@ -24,6 +24,7 @@ import loguru
 @dataclasses.dataclass
 class Config:
   generation_model_name: str = 'gemma'
+  generation_default_output_tokens: int = 64
   embeddings_model_name: str = 'mxbai-embed-large'
   embeddings_url: str = 'http://localhost:11434/api/embeddings'
   generation_url: str = 'http://localhost:11434/api/generate'

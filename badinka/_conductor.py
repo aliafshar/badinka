@@ -38,8 +38,8 @@ class Conductor:
       **prompt_params: dict[str, any]):
     match generator_input:
       case str():
-        return self.generator.generate_from_string(
-            generator_input=generator_input,
+        return self.generator.generate_from_text(
+            generator_input,
             options=options)
       case Prompt():
         return self.generator.generate_from_prompt(

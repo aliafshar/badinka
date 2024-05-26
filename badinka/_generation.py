@@ -114,12 +114,14 @@ class Generator:
     self.config.log.debug(reply)
     return reply
 
-  def generate_from_prompt(self, prompt: Prompt, options: Options=None,
+  def generate_from_prompt(self, prompt: Prompt,
+      options: Options=None,
       **prompt_params):
     t = prompt.render(**prompt_params)
     return self.generate_from_text(text=t, options=options)
 
-  def generate_from_instruction(self, instruction: Instruction, options: Options=None,
+  def generate_from_instruction(self, instruction: Instruction,
+      options: Options=None,
       **prompt_params):
     t = instruction.render(**prompt_params)
     return self.generate_from_text(text=t, options=options)
@@ -144,4 +146,4 @@ Check your work and don't answer if you don't know.
 {{query}}
 """
 
-# vim: ft=python sw=2 ts=2 sts=2 tw=120
+# vim: ft=python sw=2 ts=2 sts=2 tw=80

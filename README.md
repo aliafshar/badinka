@@ -8,7 +8,7 @@
 
 ## Basic LLM generation
 
-[example.path](examples/gen0.py)
+[view file: gen0.py](examples/gen0.py)
 
 ### Rendered prompt
 
@@ -27,6 +27,8 @@
 >       load_duration=4498268186,
 >       prompt_duration=4437450000)
 
+### Code
+
 ```python
 def main():
   c = bd.Conductor()
@@ -42,7 +44,7 @@ if __name__ == '__main__':
 
 ## rag0.py a hello world of retrieval augmented generation.
 
-[example.path](examples/rag0.py)
+[view file: rag0.py](examples/rag0.py)
 
 # Rendered prompt
 
@@ -57,6 +59,8 @@ if __name__ == '__main__':
 
 > Because of fairies, of course! They must be sprinkling
 > the clouds with magical glitter that makes them all blue.
+
+### Code
 
 ```python
 import badinka as bd

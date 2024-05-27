@@ -1,5 +1,18 @@
 # BaDinka
 
+**Minimalist AI orchestration library for local LLMs**
+
+
+## What is a minimalist orchestration framework
+
+BaDinka provides the following:
+
+1. Model generation with Gemma (or other Ollama models)
+2. Document storage with Chromadb
+
+and simplifies the connection between them in order to prompt the LLM with
+instructions.
+
 
 
 
@@ -7,9 +20,7 @@
 
 
 ## Basic LLM generation
-
-[view file: gen0.py](examples/gen0.py)
-
+View/Download source: [gen0.py](examples/gen0.py)
 ### Rendered prompt
 
 > why is the sky blue?
@@ -26,9 +37,7 @@
 >       eval_duration=63221428000,
 >       load_duration=4498268186,
 >       prompt_duration=4437450000)
-
 ### Code
-
 ```python
 def main():
   c = bd.Conductor()
@@ -40,12 +49,8 @@ if __name__ == '__main__':
   main()
 ```
 
-
-
 ## rag0.py a hello world of retrieval augmented generation.
-
-[view file: rag0.py](examples/rag0.py)
-
+View/Download source: [rag0.py](examples/rag0.py)
 # Rendered prompt
 
 > You should behave as a gullible person.
@@ -59,9 +64,7 @@ if __name__ == '__main__':
 
 > Because of fairies, of course! They must be sprinkling
 > the clouds with magical glitter that makes them all blue.
-
 ### Code
-
 ```python
 import badinka as bd
 
@@ -91,6 +94,20 @@ if __name__ == '__main__':
 ```
 
 
+# Motivation
+
+(obligatory stream of consciousness)
+
+Most orchestration frameworks are built to integrate every possible combination
+of models, databases, etc. possible and are very good at making it possible to
+swap components out. BaDinka is not that framework.
+
+BaDinka doesn't particularly focus on the concept or arbitrary pipelines either.
+I found, while using Langchain and Haystack (two excellent frameworks you should
+probably check out if you are using Python) that things became overly complex,
+but overly un-granular, and in an effort to support *everything*, that *nothing*
+was particularly well supported. This is not a criticism, but a common effect of
+generalization in software development - the lowest common denominator effect.
 
 
 

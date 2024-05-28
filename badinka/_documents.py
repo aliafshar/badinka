@@ -15,8 +15,11 @@
 """Documentation storage in Chroma vectors"""
 
 
-from uuid import uuid4
 from dataclasses import dataclass, field
+from collections import abc
+import uuid
+
+
 from chromadb import Collection
 from chromadb import EphemeralClient, PersistentClient
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
@@ -37,7 +40,7 @@ class Document:
   
   #: The ID of the document. All documents stored in the vector database need an
   #: ID, and this is automatically generated ising `uuid.uuid4` if not provided.
-  id: str = field(default_factory=lambda: str(uuid4()))
+  id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
   #: An arbitrary set of key, values stored for later retrieval. This can be
   #: extremely useful for:
@@ -50,6 +53,56 @@ class Document:
   #: reading as they are generated on document storage, but could be used to
   #: store if they are provided.
   embeddings: list[float] = field(default=None, repr=False)
+
+
+class DocumentList(abc.Sequence):
+  """List of documents from querying the document store."""
+
+  def __init__(self):
+    self.documents: list[Document] = []
+
+  def __getitem__(self, index) -> Document:
+    return self.documents[index]
+
+  def __len__(self) -> int:
+    return len(self.documents)
+
+  @classmethod
+  def from_query_response(cls, response) -> abc.Sequence[Document]:
+    return cls.from_response(
+        ids = response['ids'][0],
+        contents = response['documents'][0],
+        embeddings = response['embeddings'][0],
+        metadatas = response['metadatas'][0],
+    )
+
+  @classmethod
+  def from_get_response(cls, response):
+    return cls.from_response(
+        ids = response['ids'],
+        contents = response['documents'],
+        embeddings = response['embeddings'],
+        metadatas = response['metadatas'],
+    )
+
+  @classmethod
+  def from_response(cls,
+      ids: list[str],
+      contents: list[str],
+      embeddings: list[float],
+      metadatas: list[dict[str, any]]
+  ):
+    ds = cls()
+    for i, id in enumerate(ids):
+      d = Document(content=contents[i], id=id)
+      if metadatas:
+        d.metadata = metadatas[i]
+      if embeddings:
+        d.embeddings = embeddings[i]
+      ds.documents.append(d)
+    return ds
+
+
 
 
 @dataclass
@@ -72,13 +125,14 @@ class Query:
   n_results: int = 10
 
   def as_args(self) -> dict[str, any]:
-    """Converts the stored attributes into chroma query keyword arguments.
-    """
+    """Converts the stored attributes into chroma query keyword arguments."""
     texts = list(self.texts)
     if self.text:
       texts.insert(0, self.text)
     return {
         'query_texts': texts,
+        'include': ['documents', 'metadatas', 'embeddings', 'distances'],
+
     }
   
 
@@ -121,26 +175,6 @@ class DocumentStore:
       metadatas=[d.meta for d in docs],
       documents=[d.content for d in docs])
 
-  def documentify(self, results) -> list[Document]:
-    """Generate documents from a database response."""
-    self.config.log.debug(results)
-    docs = []
-    for (content, id, meta) in zip(
-        results['documents'][0],
-        results['ids'][0],
-        results['metadatas'][0],
-        #results['embeddings'],
-    ):
-      d = Document(
-          content=content,
-          id=id,
-          meta=meta,
-          #embeddings=embeddings,
-      )
-      docs.append(d)
-    return docs
-
-
   def query_text(self, text, n_results=10,
       collection_name='default') -> list[Document]:
     q = Query(
@@ -154,6 +188,6 @@ class DocumentStore:
     c = self.collection(collection_name=collection_name)
     results = c.query(**query.as_args())
     print(results)
-    return self.documentify(results)
+    return DocumentList.from_query_response(results)
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

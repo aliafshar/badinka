@@ -12,56 +12,118 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-
 from dataclasses import dataclass, field
 
 import jinja2
 import ollama
 import datetime
 
+from ._config import Config
+
 
 @dataclass
 class Options:
-  output_tokens: int = 128
+  """The options for a generation call."""
 
-  def as_dict(self):
+  #: The number of output tokens
+  output_tokens: int = None
+
+  def as_dict(self) -> dict[str, any]:
+    """Generates the correct keywords for calling Ollama."""
     return {
         'num_predict': self.output_tokens,
     }
 
+  def load_defaults(self, config) -> None: 
+    """Load the default values from the overall configuration.
+
+    Since most parameters have defaults in the configuration but are overridable
+    per individual call, we provide a mechanism to update the unset options from
+    their defaults.
+    """
+    if not self.output_tokens:
+      self.output_tokens = config.generation_output_tokens
+
+
 @dataclass
 class Prompt:
+  """A prompt with substitutable variables.
+
+  BaDinka prompts use the complete [Jinja2]() templating language."""
+
+  #: The template content as a string.
   template: str
 
-  def render(self, **kw):
+  def render(self, **prompt_params: dict[str, any]) -> str:
+    """Render the template with the given prompt parameters."""
     t = jinja2.Template(self.template)
-    return t.render(**kw)
+    return t.render(**prompt_params)
 
 
 @dataclass
 class Injection:
+  """Context injection parameters to populate the prompt context."""
+
+  #: The number of results to populate the context.
   n_results: int = 10
+
 
 @dataclass
 class Instruction:
+  """The instruction to generate for an LLM
 
+  This is a high-level construct which contains a bunch of different parts to
+  build a prompt for an LLM:
+
+  1. The prompt is the prompt that will generate the final query for the LLM.
+     This is a jinja2 template which can be substituted with parameters during
+     the render.
+
+  2. The context. You can populate this manually, or you can use the injection
+     to automatically generate it from the document store based on the query.
+
+  3. The role describes how you want the LLM to behave. This can be a person,
+     such as "teacher" or describe the behavioural attributes of the LLM.
+
+  4. Injection defines how the context will be populated from the document store
+     with the query parameters. 
+
+  """
+
+  #: The prompt that provides the last part of the instruction.
   prompt: Prompt
 
+  #: The parameters that control whether context is injected.
   inject: Injection = None
 
+  #: The behavioural role that the generation will take.
   role: str = None
+
+  #: The tone that the generation should take.
   tone: str = None
+
+  #: The prompt context. If provided, the LLM will be given the context and
+  #: instructed to use it to generate its response.
+  #: Note: when an injection is provided this is overriden.
   context: str = None
+
+  #: The hard-coded text query. If the prompt is provided this will be overriden
+  #: with the rendered prompt.
   query: str = None
+
+  #: The template for the complete instruction. This prompt has a default which
+  #: can be overriden here.
   template: Prompt = field(
-      default_factory=lambda: Prompt(template=default_instruction_template)
+      default_factory=lambda: Prompt(
+        template=default_instruction_template)
   )
 
-  def render_query(self, **kw):
+  def render_query(self, **kw) -> str:
+    """Renders the query part of the prompt."""
     return self.prompt.render(**kw)
 
-  def render(self, **kw):
+  def render(self, **kw) -> str:
+    """Renders the complete prompt."""
     q = self.render_query(**kw)
     p = self.template.render(
         role = self.role,
@@ -72,19 +134,34 @@ class Instruction:
     return p
 
 
-
 @dataclass
 class Reply:
+  """Generated text from the LLM."""
+
+  #: The text content of the reply.
   content: str
+
+  #: The model that was used for generation.
   model_name: str
+
+  #: The date and time of the response.
   date: datetime.datetime
+
+  #: The duration that the entire generation took.
   duration: int
+
+  #: The duration of evaluation.
   eval_duration: int
+
+  #: The duration of loading the model.
   load_duration: int
+
+  #: The duration of the actual prompt.
   prompt_duration: int
 
   @classmethod
   def from_response(cls, resp):
+    """Create this instance from the Ollama response."""
     return cls(
         content=resp['response'],
         date=datetime.datetime.fromisoformat(resp['created_at']),
@@ -97,11 +174,14 @@ class Reply:
 
 
 class Generator:
+  """Generator calls LLMs and generates text."""
 
-  def __init__(self, config):
+  def __init__(self, config: Config):
     self.config = config
 
-  def generate_from_text(self, text: str, options: Options = None):
+  def generate_from_text(self, text: str,
+      options: Options = None) -> Reply:
+    """Generate a response from simple text."""
     if not options:
       options = Options()
     self.config.log.debug(text)
@@ -116,17 +196,20 @@ class Generator:
 
   def generate_from_prompt(self, prompt: Prompt,
       options: Options=None,
-      **prompt_params):
+      **prompt_params) -> Reply:
+    """Generate a response from a prompt with parameters."""
     t = prompt.render(**prompt_params)
     return self.generate_from_text(text=t, options=options)
 
   def generate_from_instruction(self, instruction: Instruction,
       options: Options=None,
-      **prompt_params):
+      **prompt_params) -> Reply:
+    """Generate a response from a complete instruction."""
     t = instruction.render(**prompt_params)
     return self.generate_from_text(text=t, options=options)
 
 
+#: The default template for an instruction.
 default_instruction_template = """
 {%- if role %}
 You should behave as {{role}}.

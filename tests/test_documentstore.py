@@ -14,33 +14,41 @@
 
 
 
-import badinka
+import badinka as bd
 
 
 def test_add_document_default():
-  d = badinka.Document(content='I am a doc')
-  ds = badinka.DocumentStore(badinka.Config())
+  d = bd.Document(content='I am a doc')
+  ds = bd.DocumentStore(bd.Config())
   ds.append(d)
-  r = ds.collection().peek(1)
-  ds.config.log.debug(ds.documentify(r))
-  assert d.id == r['ids'][0]
+  r = bd.DocumentList.from_get_response(
+      ds.collection().peek(1))
+  assert d.id == r[0].id
 
 def test_document_auto_id():
-  d = badinka.Document(content='I am a doc')
+  d = bd.Document(content='I am a doc')
   assert 'I am a doc' == d.content
   assert d.id
 
 def test_document_passed_id():
-  d = badinka.Document(content='I am a doc', id='123')
+  d = bd.Document(content='I am a doc', id='123')
   assert 'I am a doc' == d.content
   assert '123' == d.id
 
 def test_collections():
-  ds = badinka.DocumentStore(badinka.Config())
+  ds = bd.DocumentStore(bd.Config())
   c1 = ds.collection('banana')
   assert 'banana' == c1.name
   c2 = ds.collection('banana')
   assert 'banana' == c2.name
+
+def test_documentlist():
+  ds = bd.DocumentList()
+  doc = bd.Document(content='hello')
+  ds.documents.append(doc)
+  assert len(ds) == 1
+  assert list(ds) == [doc]
+  assert doc in ds
 
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=120

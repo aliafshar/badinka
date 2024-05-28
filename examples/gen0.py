@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""gen0.py a hello world of generation.
+"""Basic LLM generation
 
-# Rendered prompt
+### Rendered prompt
 
 > why is the sky blue?
 
-# Output example
+### Output example
 
 > Reply(content='**The sky is blue due to two main factors:**\n\n**1. Ra...'
 >       model_name='gemma',

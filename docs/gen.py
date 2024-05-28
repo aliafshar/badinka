@@ -14,9 +14,45 @@
 
 """Tiny wrapper to generate the BaDinka reference docs"""
 
+import os
+import sys
+import dataclasses
 
+import jinja2
 import pdoc
 import loguru
+import pathlib
+
+
+@dataclasses.dataclass
+class Example:
+  name: str
+  summary: str
+  description: str
+  source: str
+  
+  @property
+  def filename(self):
+    return f'{self.name}.py'
+
+  @property
+  def path(self):
+    return f'examples/{self.filename}'
+
+  @classmethod
+  def from_mod(cls, mod):
+    doclines = mod.docstring.splitlines()
+    summary = doclines[0]
+    description = '\n'.join(doclines[1:]).strip()
+    srclines = mod.source.splitlines()[15 + len(doclines):-1]
+    source = '\n'.join(srclines).strip()
+    return cls(
+        name = mod.name,
+        summary = summary,
+        description = description,
+        source = source,
+    )
+
 
 def write_module(name, html):
   path = f'docs/public/{name}.html'
@@ -24,10 +60,71 @@ def write_module(name, html):
   with open(path, 'w') as f:
     f.write(html)
 
-def main():
+def write_reference_docs():
   context = pdoc.Context()
   mod = pdoc.Module('badinka', context=context)
   write_module('index', mod.html())
+
+def write_readme():
+  f = open('docs/README.jinja2.md')
+  t = jinja2.Template(f.read())
+  f.close()
+  out = t.render(
+      subtitle = read_docstring(),
+      examples = read_examples(),
+      howto = read_howto(),
+      motivation = read_motivation(),
+  )
+  f = open('README.md', 'w')
+  f.write(out)
+  f.close()
+  print(out)
+
+
+def read_howto():
+  f = open('docs/howto.md')
+  howto = f.read()
+  f.close()
+  return howto
+
+def read_motivation():
+  f = open('docs/motivation.md')
+  howto = f.read()
+  f.close()
+  return howto
+
+def read_docstring():
+  context = pdoc.Context()
+  mod = pdoc.Module('badinka', context=context)
+  return mod.docstring
+
+
+def read_examples():
+  eg_namess = [
+      'gen0',
+      'rag0',
+  ]
+  sys.path.append('examples')
+  context = pdoc.Context()
+  egs = []
+  for eg_name in eg_namess:
+    mod = pdoc.Module(eg_name, context=context)
+    print(mod.name, mod.qualname)
+    egs.append(Example.from_mod(mod))
+  return egs
+
+
+
+def main():
+  write_reference_docs()
+  write_readme()
+  #for line in mod.source.splitlines()[15:-1]:
+  #  print([line])
+  #print(dir(mod))
+  #print(mod.doc)
+  #print(mod.docstring)
+  #print(mod.text)
+  
 
 if __name__ == '__main__':
   main()

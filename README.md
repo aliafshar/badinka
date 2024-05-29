@@ -60,13 +60,12 @@ View/Download source: [gen0.py](examples/gen0.py)
 
 > why is the sky blue?
 
-### Output example
+### Output (e.g.)
 
 > **The sky is blue due to a process called Rayleigh scattering.**
 ### Code
 ```python
 import badinka as bd
-
 
 def main():
   c = bd.Conductor()
@@ -76,14 +75,13 @@ def main():
   )
   print(reply.content)
 
-
 if __name__ == '__main__':
   main()
 ```
 
 ## Basic retrieval augmented generation.
 View/Download source: [rag0.py](examples/rag0.py)
-# Rendered prompt
+### Rendered prompt
 
 > You should behave as a gullible person.
 > Using only the following context, answer the question below:
@@ -92,7 +90,7 @@ View/Download source: [rag0.py](examples/rag0.py)
 >
 > why is the sky blue?
 
-# Output example
+### Output (e.g.)
 
 > Because of fairies, of course! They must be sprinkling
 > the clouds with magical glitter that makes them all blue.
@@ -119,7 +117,6 @@ def main():
     ),
   )
   print(reply.content)
-
 
 if __name__ == '__main__':
   main()

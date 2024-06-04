@@ -13,15 +13,12 @@
 # limitations under the License.
 
 
-
 from dataclasses import dataclass, field
 
+from ._logging import log
 from ._config import Config
 from ._documents import Document, DocumentStore, Query
 from ._generation import Generator, Prompt, Reply, Instruction, Options
-
-
-
   
 
 class Conductor:
@@ -29,6 +26,9 @@ class Conductor:
 
   def __init__(self, config=None):
     self.config = config or Config()
+    if self.config.logging_enabled:
+      log.enable('badinka')
+    log.debug(f'config={self.config}', action='start')
     self.docs = DocumentStore(self.config)
     self.generator = Generator(self.config)
 
@@ -36,6 +36,7 @@ class Conductor:
       generator_input: str | Prompt | Instruction,
       options: Options=None,
       **prompt_params: dict[str, any]):
+    #log.debug(f'input={generator_input} options={options}', action='generate')
     match generator_input:
       case str():
         return self.generator.generate_from_text(
@@ -48,11 +49,16 @@ class Conductor:
       case Instruction():
         if generator_input.inject:
           q = generator_input.render_query(**prompt_params)
-          docs = self.docs.query(Query(text=q))
+          docs = self.docs.query(
+              Query(
+                  text=q,
+                  n_results=generator_input.inject.n_results,
+              ),
+          )
           generator_input.context = '\n'.join(d.content for d in docs)
         return self.generator.generate_from_instruction(
             generator_input,
             options=options, **prompt_params)
 
 
-# vim: ft=python sw=2 ts=2 sts=2 tw=120
+# vim: ft=python sw=2 ts=2 sts=2 tw=80

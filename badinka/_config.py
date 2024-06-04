@@ -45,8 +45,8 @@ class Config:
   #: as a persistent store.
   vector_store_path: str = ':memory:'
 
-  #: The logging mechanism.
-  log: loguru._Logger = loguru.logger
+  #: Whether logging should be enabled
+  logging_enabled: bool = True
 
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

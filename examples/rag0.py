@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""rag0.py a hello world of retrieval augmented generation.
+"""Basic retrieval augmented generation.
 
-# Rendered prompt
+### Rendered prompt
 
 > You should behave as a gullible person.
 > Using only the following context, answer the question below:
@@ -23,7 +23,7 @@
 >
 > why is the sky blue?
 
-# Output example
+### Output (e.g.)
 
 > Because of fairies, of course! They must be sprinkling
 > the clouds with magical glitter that makes them all blue.

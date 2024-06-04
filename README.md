@@ -69,10 +69,7 @@ import badinka as bd
 
 def main():
   c = bd.Conductor()
-  reply = c.generate(
-      'why is the sky blue?',
-      bd.Options(output_tokens=16),
-  )
+  reply = c.generate('why is the sky blue?')
   print(reply.content)
 
 if __name__ == '__main__':

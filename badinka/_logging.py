@@ -12,30 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Minimalist AI orchestration library for local LLMs"""
+"""Logging"""
 
-__version__ = '0.1'
+import sys
 
+from loguru import logger as log
 
-from ._conductor import Conductor
-from ._config import Config
-from ._documents import Document, DocumentStore, Query, DocumentList
-from ._generation import Generator, Prompt, Reply, Instruction, \
-    Options, Injection
+log.remove()
+log.add(
+    sys.stdout,
+    colorize=True,
+    format=(
+      '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | '
+      '<level>{level: <8}</level> | '
+      '<cyan>{file}:{line}</cyan> | '
+      '<red><b>[{extra[action]}]</b></red> '
+      '{message}'
+    )
+)
 
-
-__all__ = [
-    'Conductor',
-    'Config',
-    'Document',
-    'DocumentStore',
-    'Generator',
-    'Injection',
-    'Instruction',
-    'Prompt',
-    'Query',
-    'Reply',
-]
-
+log.disable('badinka')
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

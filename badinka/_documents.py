@@ -14,17 +14,19 @@
 
 """Documentation storage in Chroma vectors"""
 
+from loguru import logger as log
 
 from dataclasses import dataclass, field
 from collections import abc
-import uuid
-
+from uuid import uuid4
 
 from chromadb import Collection
 from chromadb import EphemeralClient, PersistentClient
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 
+
 from ._config import Config
+
 
 
 @dataclass
@@ -40,7 +42,7 @@ class Document:
   
   #: The ID of the document. All documents stored in the vector database need an
   #: ID, and this is automatically generated ising `uuid.uuid4` if not provided.
-  id: str = field(default_factory=lambda: str(uuid.uuid4()))
+  id: str = field(default_factory=lambda: str(uuid4()))
 
   #: An arbitrary set of key, values stored for later retrieval. This can be
   #: extremely useful for:
@@ -68,7 +70,9 @@ class DocumentList(abc.Sequence):
     return len(self.documents)
 
   @classmethod
-  def from_query_response(cls, response) -> abc.Sequence[Document]:
+  def from_query_response(cls,
+      response) -> abc.Sequence[Document]:
+    """Parse a chromadb response for a query."""
     return cls.from_response(
         ids = response['ids'][0],
         contents = response['documents'][0],
@@ -77,7 +81,9 @@ class DocumentList(abc.Sequence):
     )
 
   @classmethod
-  def from_get_response(cls, response):
+  def from_get_response(cls,
+      response) -> abc.Sequence[Document]:
+    """Parse a chromadb response for a get."""
     return cls.from_response(
         ids = response['ids'],
         contents = response['documents'],
@@ -91,7 +97,8 @@ class DocumentList(abc.Sequence):
       contents: list[str],
       embeddings: list[float],
       metadatas: list[dict[str, any]]
-  ):
+  ) -> abc.Sequence[Document]:
+    """Parse a chromadb response."""
     ds = cls()
     for i, id in enumerate(ids):
       d = Document(content=contents[i], id=id)
@@ -103,13 +110,10 @@ class DocumentList(abc.Sequence):
     return ds
 
 
-
-
 @dataclass
 class Query:
   """Contains the information required to query the database.
   """
-
   #: A text query. Since the underlying API offers a list of text queries, this
   #: is a convenience to save wrapping every text in a list.
   text: str = None
@@ -132,15 +136,13 @@ class Query:
     return {
         'query_texts': texts,
         'include': ['documents', 'metadatas', 'embeddings', 'distances'],
-
     }
-  
 
 
 class DocumentStore:
   """Stores and retrieves documents in a vector database
 
-  In our case, we use Chroma.
+  In our case, we use ChromaDB.
   """
 
   def __init__(self, config: Config):
@@ -151,12 +153,14 @@ class DocumentStore:
     )
 
   def client(self):
+    """Create a chromadb client."""
     if self.config.vector_store_path == ':memory:':
       return EphemeralClient()
     else:
-      return PersistenClient(self.config.vector_store_path)
+      return PersistentClient(self.config.vector_store_path)
 
   def collection(self, collection_name: str = 'default') -> Collection:
+    """Get or create an existing or the default collection."""
     return self.client().get_or_create_collection(
         collection_name,
         embedding_function=self.embedding_function,
@@ -164,7 +168,6 @@ class DocumentStore:
 
   def append(self, doc, collection_name='default'):
     """Add a single document to the named collection or default."""
-    self.config.log.debug(f'adding document to {collection_name}, {doc}')
     self.extend([doc], collection_name=collection_name)
 
   def extend(self, docs, collection_name='default') -> None:
@@ -177,6 +180,7 @@ class DocumentStore:
 
   def query_text(self, text, n_results=10,
       collection_name='default') -> list[Document]:
+    """Query the documents for a single text query."""
     q = Query(
         texts = [text],
         n_results = n_results,
@@ -185,9 +189,9 @@ class DocumentStore:
 
   def query(self, query: Query,
       collection_name='default') -> list[Document]:
+    """Query the documents."""
     c = self.collection(collection_name=collection_name)
     results = c.query(**query.as_args())
-    print(results)
     return DocumentList.from_query_response(results)
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

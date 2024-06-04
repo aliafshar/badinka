@@ -13,10 +13,12 @@
 # limitations under the License.
 
 from dataclasses import dataclass, field
+import datetime
 
 import jinja2
 import ollama
-import datetime
+
+from loguru import logger as log
 
 from ._config import Config
 
@@ -102,6 +104,9 @@ class Instruction:
   #: The tone that the generation should take.
   tone: str = None
 
+  #: The detail at which to generate
+  detail: str = None
+
   #: The prompt context. If provided, the LLM will be given the context and
   #: instructed to use it to generate its response.
   #: Note: when an injection is provided this is overriden.
@@ -184,14 +189,12 @@ class Generator:
     """Generate a response from simple text."""
     if not options:
       options = Options()
-    self.config.log.debug(text)
     resp = ollama.generate(
         model=self.config.generation_model_name,
         prompt=text,
         options=options.as_dict(),
     )
     reply = Reply.from_response(resp)
-    self.config.log.debug(reply)
     return reply
 
   def generate_from_prompt(self, prompt: Prompt,
@@ -206,6 +209,7 @@ class Generator:
       **prompt_params) -> Reply:
     """Generate a response from a complete instruction."""
     t = instruction.render(**prompt_params)
+    print(t)
     return self.generate_from_text(text=t, options=options)
 
 
@@ -218,7 +222,8 @@ You should behave as {{role}}.
 You should adopt a tone that is {{tone}}.
 {%- endif %}
 {%- if context %}
-Using only the following context, answer the question below:
+Using only the following context, answer the question below
+{%- if detail %}{{ detail }}{%- endif %}:
 
 Context: {{context}}
 {%- endif %}

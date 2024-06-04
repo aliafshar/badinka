@@ -48,7 +48,7 @@ __version__ = &#39;0.1&#39;
 
 from ._conductor import Conductor
 from ._config import Config
-from ._documents import Document, DocumentStore, Query
+from ._documents import Document, DocumentStore, Query, DocumentList
 from ._generation import Generator, Prompt, Reply, Instruction, \
     Options, Injection
 
@@ -59,6 +59,7 @@ __all__ = [
     &#39;Document&#39;,
     &#39;DocumentStore&#39;,
     &#39;Generator&#39;,
+    &#39;Injection&#39;,
     &#39;Instruction&#39;,
     &#39;Prompt&#39;,
     &#39;Query&#39;,
@@ -93,6 +94,9 @@ __all__ = [
 
   def __init__(self, config=None):
     self.config = config or Config()
+    if self.config.logging_enabled:
+      log.enable(&#39;badinka&#39;)
+    log.debug(f&#39;config={self.config}&#39;, action=&#39;start&#39;)
     self.docs = DocumentStore(self.config)
     self.generator = Generator(self.config)
 
@@ -100,6 +104,7 @@ __all__ = [
       generator_input: str | Prompt | Instruction,
       options: Options=None,
       **prompt_params: dict[str, any]):
+    #log.debug(f&#39;input={generator_input} options={options}&#39;, action=&#39;generate&#39;)
     match generator_input:
       case str():
         return self.generator.generate_from_text(
@@ -112,7 +117,12 @@ __all__ = [
       case Instruction():
         if generator_input.inject:
           q = generator_input.render_query(**prompt_params)
-          docs = self.docs.query(Query(text=q))
+          docs = self.docs.query(
+              Query(
+                  text=q,
+                  n_results=generator_input.inject.n_results,
+              ),
+          )
           generator_input.context = &#39;\n&#39;.join(d.content for d in docs)
         return self.generator.generate_from_instruction(
             generator_input,
@@ -133,6 +143,7 @@ __all__ = [
     generator_input: str | Prompt | Instruction,
     options: Options=None,
     **prompt_params: dict[str, any]):
+  #log.debug(f&#39;input={generator_input} options={options}&#39;, action=&#39;generate&#39;)
   match generator_input:
     case str():
       return self.generator.generate_from_text(
@@ -145,7 +156,12 @@ __all__ = [
     case Instruction():
       if generator_input.inject:
         q = generator_input.render_query(**prompt_params)
-        docs = self.docs.query(Query(text=q))
+        docs = self.docs.query(
+            Query(
+                text=q,
+                n_results=generator_input.inject.n_results,
+            ),
+        )
         generator_input.context = &#39;\n&#39;.join(d.content for d in docs)
       return self.generator.generate_from_instruction(
           generator_input,
@@ -156,7 +172,7 @@ __all__ = [
 </dd>
 <dt id="badinka.Config"><code class="flex name class">
 <span>class <span class="ident">Config</span></span>
-<span>(</span><span>generation_model_name: str = 'gemma', generation_output_tokens: int = 64, embeddings_model_name: str = 'mxbai-embed-large', embeddings_url: str = 'http://localhost:11434/api/embeddings', generation_url: str = 'http://localhost:11434/api/generate', vector_store_path: str = ':memory:', log: loguru._logger.Logger = &lt;loguru.logger handlers=[(id=0, level=10, sink=&lt;stderr&gt;)]&gt;)</span>
+<span>(</span><span>generation_model_name: str = 'gemma', generation_output_tokens: int = 64, embeddings_model_name: str = 'mxbai-embed-large', embeddings_url: str = 'http://localhost:11434/api/embeddings', generation_url: str = 'http://localhost:11434/api/generate', vector_store_path: str = ':memory:', logging_enabled: bool = True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Configuration for all BaDinka activity.</p></div>
@@ -188,8 +204,8 @@ class Config:
   #: as a persistent store.
   vector_store_path: str = &#39;:memory:&#39;
 
-  #: The logging mechanism.
-  log: loguru._Logger = loguru.logger</code></pre>
+  #: Whether logging should be enabled
+  logging_enabled: bool = True</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -213,9 +229,9 @@ class Config:
 <dd>
 <div class="desc"><p>The Ollama URL used for generation.</p></div>
 </dd>
-<dt id="badinka.Config.log"><code class="name">var <span class="ident">log</span> : loguru._logger.Logger</code></dt>
+<dt id="badinka.Config.logging_enabled"><code class="name">var <span class="ident">logging_enabled</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>The logging mechanism.</p></div>
+<div class="desc"><p>Whether logging should be enabled</p></div>
 </dd>
 <dt id="badinka.Config.vector_store_path"><code class="name">var <span class="ident">vector_store_path</span> : str</code></dt>
 <dd>
@@ -298,7 +314,7 @@ extremely useful for:</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Stores and retrieves documents in a vector database</p>
-<p>In our case, we use Chroma.</p></div>
+<p>In our case, we use ChromaDB.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -306,7 +322,7 @@ extremely useful for:</p>
 <pre><code class="python">class DocumentStore:
   &#34;&#34;&#34;Stores and retrieves documents in a vector database
 
-  In our case, we use Chroma.
+  In our case, we use ChromaDB.
   &#34;&#34;&#34;
 
   def __init__(self, config: Config):
@@ -317,12 +333,14 @@ extremely useful for:</p>
     )
 
   def client(self):
+    &#34;&#34;&#34;Create a chromadb client.&#34;&#34;&#34;
     if self.config.vector_store_path == &#39;:memory:&#39;:
       return EphemeralClient()
     else:
-      return PersistenClient(self.config.vector_store_path)
+      return PersistentClient(self.config.vector_store_path)
 
   def collection(self, collection_name: str = &#39;default&#39;) -&gt; Collection:
+    &#34;&#34;&#34;Get or create an existing or the default collection.&#34;&#34;&#34;
     return self.client().get_or_create_collection(
         collection_name,
         embedding_function=self.embedding_function,
@@ -330,7 +348,6 @@ extremely useful for:</p>
 
   def append(self, doc, collection_name=&#39;default&#39;):
     &#34;&#34;&#34;Add a single document to the named collection or default.&#34;&#34;&#34;
-    self.config.log.debug(f&#39;adding document to {collection_name}, {doc}&#39;)
     self.extend([doc], collection_name=collection_name)
 
   def extend(self, docs, collection_name=&#39;default&#39;) -&gt; None:
@@ -341,28 +358,9 @@ extremely useful for:</p>
       metadatas=[d.meta for d in docs],
       documents=[d.content for d in docs])
 
-  def documentify(self, results) -&gt; list[Document]:
-    &#34;&#34;&#34;Generate documents from a database response.&#34;&#34;&#34;
-    self.config.log.debug(results)
-    docs = []
-    for (content, id, meta) in zip(
-        results[&#39;documents&#39;][0],
-        results[&#39;ids&#39;][0],
-        results[&#39;metadatas&#39;][0],
-        #results[&#39;embeddings&#39;],
-    ):
-      d = Document(
-          content=content,
-          id=id,
-          meta=meta,
-          #embeddings=embeddings,
-      )
-      docs.append(d)
-    return docs
-
-
   def query_text(self, text, n_results=10,
       collection_name=&#39;default&#39;) -&gt; list[Document]:
+    &#34;&#34;&#34;Query the documents for a single text query.&#34;&#34;&#34;
     q = Query(
         texts = [text],
         n_results = n_results,
@@ -371,10 +369,10 @@ extremely useful for:</p>
 
   def query(self, query: Query,
       collection_name=&#39;default&#39;) -&gt; list[Document]:
+    &#34;&#34;&#34;Query the documents.&#34;&#34;&#34;
     c = self.collection(collection_name=collection_name)
     results = c.query(**query.as_args())
-    print(results)
-    return self.documentify(results)</code></pre>
+    return DocumentList.from_query_response(results)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -389,7 +387,6 @@ extremely useful for:</p>
 </summary>
 <pre><code class="python">def append(self, doc, collection_name=&#39;default&#39;):
   &#34;&#34;&#34;Add a single document to the named collection or default.&#34;&#34;&#34;
-  self.config.log.debug(f&#39;adding document to {collection_name}, {doc}&#39;)
   self.extend([doc], collection_name=collection_name)</code></pre>
 </details>
 </dd>
@@ -397,61 +394,34 @@ extremely useful for:</p>
 <span>def <span class="ident">client</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Create a chromadb client.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def client(self):
+  &#34;&#34;&#34;Create a chromadb client.&#34;&#34;&#34;
   if self.config.vector_store_path == &#39;:memory:&#39;:
     return EphemeralClient()
   else:
-    return PersistenClient(self.config.vector_store_path)</code></pre>
+    return PersistentClient(self.config.vector_store_path)</code></pre>
 </details>
 </dd>
 <dt id="badinka.DocumentStore.collection"><code class="name flex">
 <span>def <span class="ident">collection</span></span>(<span>self, collection_name: str = 'default') ‑> chromadb.api.models.Collection.Collection</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Get or create an existing or the default collection.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def collection(self, collection_name: str = &#39;default&#39;) -&gt; Collection:
+  &#34;&#34;&#34;Get or create an existing or the default collection.&#34;&#34;&#34;
   return self.client().get_or_create_collection(
       collection_name,
       embedding_function=self.embedding_function,
   )</code></pre>
-</details>
-</dd>
-<dt id="badinka.DocumentStore.documentify"><code class="name flex">
-<span>def <span class="ident">documentify</span></span>(<span>self, results) ‑> list[badinka._documents.Document]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Generate documents from a database response.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def documentify(self, results) -&gt; list[Document]:
-  &#34;&#34;&#34;Generate documents from a database response.&#34;&#34;&#34;
-  self.config.log.debug(results)
-  docs = []
-  for (content, id, meta) in zip(
-      results[&#39;documents&#39;][0],
-      results[&#39;ids&#39;][0],
-      results[&#39;metadatas&#39;][0],
-      #results[&#39;embeddings&#39;],
-  ):
-    d = Document(
-        content=content,
-        id=id,
-        meta=meta,
-        #embeddings=embeddings,
-    )
-    docs.append(d)
-  return docs</code></pre>
 </details>
 </dd>
 <dt id="badinka.DocumentStore.extend"><code class="name flex">
@@ -476,30 +446,31 @@ extremely useful for:</p>
 <span>def <span class="ident">query</span></span>(<span>self, query: badinka._documents.Query, collection_name='default') ‑> list[badinka._documents.Document]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Query the documents.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def query(self, query: Query,
     collection_name=&#39;default&#39;) -&gt; list[Document]:
+  &#34;&#34;&#34;Query the documents.&#34;&#34;&#34;
   c = self.collection(collection_name=collection_name)
   results = c.query(**query.as_args())
-  print(results)
-  return self.documentify(results)</code></pre>
+  return DocumentList.from_query_response(results)</code></pre>
 </details>
 </dd>
 <dt id="badinka.DocumentStore.query_text"><code class="name flex">
 <span>def <span class="ident">query_text</span></span>(<span>self, text, n_results=10, collection_name='default') ‑> list[badinka._documents.Document]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Query the documents for a single text query.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def query_text(self, text, n_results=10,
     collection_name=&#39;default&#39;) -&gt; list[Document]:
+  &#34;&#34;&#34;Query the documents for a single text query.&#34;&#34;&#34;
   q = Query(
       texts = [text],
       n_results = n_results,
@@ -530,14 +501,12 @@ extremely useful for:</p>
     &#34;&#34;&#34;Generate a response from simple text.&#34;&#34;&#34;
     if not options:
       options = Options()
-    self.config.log.debug(text)
     resp = ollama.generate(
         model=self.config.generation_model_name,
         prompt=text,
         options=options.as_dict(),
     )
     reply = Reply.from_response(resp)
-    self.config.log.debug(reply)
     return reply
 
   def generate_from_prompt(self, prompt: Prompt,
@@ -552,6 +521,7 @@ extremely useful for:</p>
       **prompt_params) -&gt; Reply:
     &#34;&#34;&#34;Generate a response from a complete instruction.&#34;&#34;&#34;
     t = instruction.render(**prompt_params)
+    print(t)
     return self.generate_from_text(text=t, options=options)</code></pre>
 </details>
 <h3>Methods</h3>
@@ -570,6 +540,7 @@ extremely useful for:</p>
     **prompt_params) -&gt; Reply:
   &#34;&#34;&#34;Generate a response from a complete instruction.&#34;&#34;&#34;
   t = instruction.render(**prompt_params)
+  print(t)
   return self.generate_from_text(text=t, options=options)</code></pre>
 </details>
 </dd>
@@ -604,22 +575,45 @@ extremely useful for:</p>
   &#34;&#34;&#34;Generate a response from simple text.&#34;&#34;&#34;
   if not options:
     options = Options()
-  self.config.log.debug(text)
   resp = ollama.generate(
       model=self.config.generation_model_name,
       prompt=text,
       options=options.as_dict(),
   )
   reply = Reply.from_response(resp)
-  self.config.log.debug(reply)
   return reply</code></pre>
 </details>
 </dd>
 </dl>
 </dd>
+<dt id="badinka.Injection"><code class="flex name class">
+<span>class <span class="ident">Injection</span></span>
+<span>(</span><span>n_results: int = 10)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Context injection parameters to populate the prompt context.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Injection:
+  &#34;&#34;&#34;Context injection parameters to populate the prompt context.&#34;&#34;&#34;
+
+  #: The number of results to populate the context.
+  n_results: int = 10</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="badinka.Injection.n_results"><code class="name">var <span class="ident">n_results</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The number of results to populate the context.</p></div>
+</dd>
+</dl>
+</dd>
 <dt id="badinka.Instruction"><code class="flex name class">
 <span>class <span class="ident">Instruction</span></span>
-<span>(</span><span>prompt: badinka._generation.Prompt, inject: badinka._generation.Injection = None, role: str = None, tone: str = None, context: str = None, query: str = None, template: badinka._generation.Prompt = &lt;factory&gt;)</span>
+<span>(</span><span>prompt: badinka._generation.Prompt, inject: badinka._generation.Injection = None, role: str = None, tone: str = None, detail: str = None, context: str = None, query: str = None, template: badinka._generation.Prompt = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The instruction to generate for an LLM</p>
@@ -682,6 +676,9 @@ class Instruction:
   #: The tone that the generation should take.
   tone: str = None
 
+  #: The detail at which to generate
+  detail: str = None
+
   #: The prompt context. If provided, the LLM will be given the context and
   #: instructed to use it to generate its response.
   #: Note: when an injection is provided this is overriden.
@@ -720,6 +717,10 @@ class Instruction:
 <div class="desc"><p>The prompt context. If provided, the LLM will be given the context and
 instructed to use it to generate its response.
 Note: when an injection is provided this is overriden.</p></div>
+</dd>
+<dt id="badinka.Instruction.detail"><code class="name">var <span class="ident">detail</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The detail at which to generate</p></div>
 </dd>
 <dt id="badinka.Instruction.inject"><code class="name">var <span class="ident">inject</span> : badinka._generation.Injection</code></dt>
 <dd>
@@ -810,7 +811,7 @@ class Prompt:
   def render(self, **prompt_params: dict[str, any]) -&gt; str:
     &#34;&#34;&#34;Render the template with the given prompt parameters.&#34;&#34;&#34;
     t = jinja2.Template(self.template)
-    return t.render(**kw)</code></pre>
+    return t.render(**prompt_params)</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -833,7 +834,7 @@ class Prompt:
 <pre><code class="python">def render(self, **prompt_params: dict[str, any]) -&gt; str:
   &#34;&#34;&#34;Render the template with the given prompt parameters.&#34;&#34;&#34;
   t = jinja2.Template(self.template)
-  return t.render(**kw)</code></pre>
+  return t.render(**prompt_params)</code></pre>
 </details>
 </dd>
 </dl>
@@ -852,7 +853,6 @@ class Prompt:
 class Query:
   &#34;&#34;&#34;Contains the information required to query the database.
   &#34;&#34;&#34;
-
   #: A text query. Since the underlying API offers a list of text queries, this
   #: is a convenience to save wrapping every text in a list.
   text: str = None
@@ -868,13 +868,13 @@ class Query:
   n_results: int = 10
 
   def as_args(self) -&gt; dict[str, any]:
-    &#34;&#34;&#34;Converts the stored attributes into chroma query keyword arguments.
-    &#34;&#34;&#34;
+    &#34;&#34;&#34;Converts the stored attributes into chroma query keyword arguments.&#34;&#34;&#34;
     texts = list(self.texts)
     if self.text:
       texts.insert(0, self.text)
     return {
         &#39;query_texts&#39;: texts,
+        &#39;include&#39;: [&#39;documents&#39;, &#39;metadatas&#39;, &#39;embeddings&#39;, &#39;distances&#39;],
     }</code></pre>
 </details>
 <h3>Class variables</h3>
@@ -910,13 +910,13 @@ two are combined.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def as_args(self) -&gt; dict[str, any]:
-  &#34;&#34;&#34;Converts the stored attributes into chroma query keyword arguments.
-  &#34;&#34;&#34;
+  &#34;&#34;&#34;Converts the stored attributes into chroma query keyword arguments.&#34;&#34;&#34;
   texts = list(self.texts)
   if self.text:
     texts.insert(0, self.text)
   return {
       &#39;query_texts&#39;: texts,
+      &#39;include&#39;: [&#39;documents&#39;, &#39;metadatas&#39;, &#39;embeddings&#39;, &#39;distances&#39;],
   }</code></pre>
 </details>
 </dd>
@@ -1053,7 +1053,7 @@ def from_response(cls, resp):
 <li><code><a title="badinka.Config.generation_model_name" href="#badinka.Config.generation_model_name">generation_model_name</a></code></li>
 <li><code><a title="badinka.Config.generation_output_tokens" href="#badinka.Config.generation_output_tokens">generation_output_tokens</a></code></li>
 <li><code><a title="badinka.Config.generation_url" href="#badinka.Config.generation_url">generation_url</a></code></li>
-<li><code><a title="badinka.Config.log" href="#badinka.Config.log">log</a></code></li>
+<li><code><a title="badinka.Config.logging_enabled" href="#badinka.Config.logging_enabled">logging_enabled</a></code></li>
 <li><code><a title="badinka.Config.vector_store_path" href="#badinka.Config.vector_store_path">vector_store_path</a></code></li>
 </ul>
 </li>
@@ -1072,7 +1072,6 @@ def from_response(cls, resp):
 <li><code><a title="badinka.DocumentStore.append" href="#badinka.DocumentStore.append">append</a></code></li>
 <li><code><a title="badinka.DocumentStore.client" href="#badinka.DocumentStore.client">client</a></code></li>
 <li><code><a title="badinka.DocumentStore.collection" href="#badinka.DocumentStore.collection">collection</a></code></li>
-<li><code><a title="badinka.DocumentStore.documentify" href="#badinka.DocumentStore.documentify">documentify</a></code></li>
 <li><code><a title="badinka.DocumentStore.extend" href="#badinka.DocumentStore.extend">extend</a></code></li>
 <li><code><a title="badinka.DocumentStore.query" href="#badinka.DocumentStore.query">query</a></code></li>
 <li><code><a title="badinka.DocumentStore.query_text" href="#badinka.DocumentStore.query_text">query_text</a></code></li>
@@ -1087,9 +1086,16 @@ def from_response(cls, resp):
 </ul>
 </li>
 <li>
+<h4><code><a title="badinka.Injection" href="#badinka.Injection">Injection</a></code></h4>
+<ul class="">
+<li><code><a title="badinka.Injection.n_results" href="#badinka.Injection.n_results">n_results</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="badinka.Instruction" href="#badinka.Instruction">Instruction</a></code></h4>
 <ul class="two-column">
 <li><code><a title="badinka.Instruction.context" href="#badinka.Instruction.context">context</a></code></li>
+<li><code><a title="badinka.Instruction.detail" href="#badinka.Instruction.detail">detail</a></code></li>
 <li><code><a title="badinka.Instruction.inject" href="#badinka.Instruction.inject">inject</a></code></li>
 <li><code><a title="badinka.Instruction.prompt" href="#badinka.Instruction.prompt">prompt</a></code></li>
 <li><code><a title="badinka.Instruction.query" href="#badinka.Instruction.query">query</a></code></li>

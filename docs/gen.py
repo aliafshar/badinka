@@ -20,8 +20,8 @@ import dataclasses
 
 import jinja2
 import pdoc
-import loguru
-import pathlib
+
+from loguru import logger as log
 
 
 @dataclasses.dataclass
@@ -45,7 +45,7 @@ class Example:
     summary = doclines[0]
     description = '\n'.join(doclines[1:]).strip()
     srclines = mod.source.splitlines()[15 + len(doclines):-1]
-    source = '\n'.join(srclines).strip()
+    source = '\n'.join(srclines).strip().replace('\n\n\n', '\n\n')
     return cls(
         name = mod.name,
         summary = summary,
@@ -56,7 +56,7 @@ class Example:
 
 def write_module(name, html):
   path = f'docs/public/{name}.html'
-  loguru.logger.info(f'{name} -> {path}')
+  log.info(f'{name} -> {path}', action='write')
   with open(path, 'w') as f:
     f.write(html)
 
@@ -78,7 +78,6 @@ def write_readme():
   f = open('README.md', 'w')
   f.write(out)
   f.close()
-  print(out)
 
 
 def read_howto():
@@ -87,11 +86,13 @@ def read_howto():
   f.close()
   return howto
 
+
 def read_motivation():
   f = open('docs/motivation.md')
   howto = f.read()
   f.close()
   return howto
+
 
 def read_docstring():
   context = pdoc.Context()
@@ -103,6 +104,7 @@ def read_examples():
   eg_namess = [
       'gen0',
       'rag0',
+      'rag1',
   ]
   sys.path.append('examples')
   context = pdoc.Context()
@@ -114,16 +116,9 @@ def read_examples():
   return egs
 
 
-
 def main():
   write_reference_docs()
   write_readme()
-  #for line in mod.source.splitlines()[15:-1]:
-  #  print([line])
-  #print(dir(mod))
-  #print(mod.doc)
-  #print(mod.docstring)
-  #print(mod.text)
   
 
 if __name__ == '__main__':

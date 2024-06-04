@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-
 import badinka as bd
 
 
@@ -25,15 +24,18 @@ def test_add_document_default():
       ds.collection().peek(1))
   assert d.id == r[0].id
 
+
 def test_document_auto_id():
   d = bd.Document(content='I am a doc')
   assert 'I am a doc' == d.content
   assert d.id
 
+
 def test_document_passed_id():
   d = bd.Document(content='I am a doc', id='123')
   assert 'I am a doc' == d.content
   assert '123' == d.id
+
 
 def test_collections():
   ds = bd.DocumentStore(bd.Config())
@@ -41,6 +43,7 @@ def test_collections():
   assert 'banana' == c1.name
   c2 = ds.collection('banana')
   assert 'banana' == c2.name
+
 
 def test_documentlist():
   ds = bd.DocumentList()

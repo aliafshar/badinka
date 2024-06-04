@@ -18,16 +18,9 @@
 
 > why is the sky blue?
 
-### Output example
+### Output (e.g.)
 
-> Reply(content='**The sky is blue due to two main factors:**\n\n**1. Ra...'
->       model_name='gemma',
->       date=datetime.datetime(2024, 5, 26, 16, 47, 56, 317100,
->           tzinfo=datetime.timezone.utc),
->       duration=72159197130,
->       eval_duration=63221428000,
->       load_duration=4498268186,
->       prompt_duration=4437450000)
+> **The sky is blue due to a process called Rayleigh scattering.**
 """
 
 import badinka as bd
@@ -36,7 +29,7 @@ import badinka as bd
 def main():
   c = bd.Conductor()
   reply = c.generate('why is the sky blue?')
-  print(reply)
+  print(reply.content)
 
 
 if __name__ == '__main__':

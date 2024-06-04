@@ -2,3 +2,6 @@
 *.pyo
 ve/
 __pycache__
+examples/data/*.txt
+examples/data/*.chroma
+examples/data/*.pdf

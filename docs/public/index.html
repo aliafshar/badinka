@@ -705,6 +705,7 @@ class Instruction:
     p = self.template.render(
         role = self.role,
         tone = self.tone,
+        detail = self.detail,
         context = self.context,
         query = q,
     )
@@ -766,6 +767,7 @@ can be overriden here.</p></div>
   p = self.template.render(
       role = self.role,
       tone = self.tone,
+      detail = self.detail,
       context = self.context,
       query = q,
   )
@@ -875,6 +877,7 @@ class Query:
     return {
         &#39;query_texts&#39;: texts,
         &#39;include&#39;: [&#39;documents&#39;, &#39;metadatas&#39;, &#39;embeddings&#39;, &#39;distances&#39;],
+        &#39;n_results&#39;: self.n_results,
     }</code></pre>
 </details>
 <h3>Class variables</h3>
@@ -917,6 +920,7 @@ two are combined.</p></div>
   return {
       &#39;query_texts&#39;: texts,
       &#39;include&#39;: [&#39;documents&#39;, &#39;metadatas&#39;, &#39;embeddings&#39;, &#39;distances&#39;],
+      &#39;n_results&#39;: self.n_results,
   }</code></pre>
 </details>
 </dd>

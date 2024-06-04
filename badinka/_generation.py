@@ -133,6 +133,7 @@ class Instruction:
     p = self.template.render(
         role = self.role,
         tone = self.tone,
+        detail = self.detail,
         context = self.context,
         query = q,
     )
@@ -223,7 +224,7 @@ You should adopt a tone that is {{tone}}.
 {%- endif %}
 {%- if context %}
 Using only the following context, answer the question below
-{%- if detail %}{{ detail }}{%- endif %}:
+{%- if detail %} {{ detail }}{%- endif %}:
 
 Context: {{context}}
 {%- endif %}

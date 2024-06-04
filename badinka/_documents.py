@@ -136,6 +136,7 @@ class Query:
     return {
         'query_texts': texts,
         'include': ['documents', 'metadatas', 'embeddings', 'distances'],
+        'n_results': self.n_results,
     }
 
 

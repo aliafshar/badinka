@@ -251,12 +251,10 @@ def query(q):
   
 
 if __name__ == '__main__':
-  #fetch()
-  #extract()
-  #embed()
+  fetch()
+  extract()
+  embed()
   query('why do people migrate')
-  query('what is migration')
-  query('what is the purpose of a national park')
 ```
 
 

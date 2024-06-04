@@ -134,27 +134,59 @@ uses it to ground responses about this topic.
 > Using only the following context, answer the question below:
 > 
 > Context: As people migrate or move to anew area, they bring their ideas,
-> objects, and the like with them in a process call
-> Most migrants move for better jobs, higher incomes, and better opportunities
-> overall
-> People move and they mix with other groups of people
-> Even though people generally migrate to find/make a better life for themselves
-> and for their families, the benefits and pitfalls of migration affect
-> different countries and regions in very different ways
-> Rural residents are more migratory than those in towns
-> While geographers try to understand where people move and why, a more
-> significant question might be why so many people move
-> Regardless of the time period, modern humans have been on the move for a very
-> long time—a trend that has accelerated in recent years owing to cheap
-> transportation and easier access to information by potential migrants
-> Different people can have different adaptations to similar places
-> 
+> `<snipped>`
+>
 > why do people migrate?
 
 ### Output (e.g.)
 
-> People migrate for better jobs, higher incomes, and better opportunities
-> overall.
+**Factors influencing human migration:**
+
+**Economic factors:**
+
+* Lack of job opportunities
+* Low wages
+* Economic instability
+* High cost of living
+
+
+**Socio-cultural factors:**
+
+* Cultural differences
+* Social networks
+* Family reunification
+* Desire for better education
+
+
+**Political factors:**
+
+* Political persecution
+* War and conflict
+* Seeking asylum
+* Political instability
+
+
+**Environmental factors:**
+
+* Climate change
+* Natural disasters
+* Environmental degradation
+
+
+**General relationship between demographic factors and migration across time:**
+
+* Population growth and urbanization
+* Economic development and inequality
+* Political and social changes
+* Environmental changes
+
+
+**Globalization and its impact on migration:**
+
+* Increased mobility and accessibility of information and transportation
+* Growing interconnectedness of economies and societies
+* Spread of ideas and values
+* Increased awareness of different cultures and perspectives
 ### Code
 ```python
 # https://oer.galileo.usg.edu/geo-textbooks/2/
@@ -162,7 +194,7 @@ original_url = ('https://oer.galileo.usg.edu/cgi/viewcontent.cgi?'
                 'article=1002&context=geo-textbooks')
 
 import PyPDF2
-
+import urllib.request 
 import badinka as bd
 
 config = bd.Config(
@@ -170,7 +202,6 @@ config = bd.Config(
 )
 
 def fetch():
-  import urllib.request 
   urllib.request.urlretrieve(original_url, 'examples/data/geography.pdf')
 
 def extract():
@@ -178,24 +209,27 @@ def extract():
   lines = []
   def _visit(text, cm, tm, font, size, lines=lines):
     if font and font['/BaseFont'] == '/PFELHC+Georgia' and tm[0] == 11.0:
-      if t := text.rstrip('\n'):
-        if '/Widths' in font:
-          del font['/Widths']
-        lines.append(t)
+      lines.append(text)
   for page in reader.pages[9:]:
     page.extract_text(visitor_text=_visit)
   f = open('examples/data/geography.txt', 'w')
-  f.write(''.join(lines))
+  f.write(''.join(lines).replace('\n', ' '))
   f.close()
 
 def embed():
   conductor = bd.Conductor(config)
   f = open('examples/data/geography.txt')
   raw = f.read()
-  sentences = raw.split('.')
+  sentences = raw.split('. ')
   for i, s in enumerate(sentences):
+    chunk = [s]
+    for j in range(3):
+      try:
+        chunk.append(sentences[i+j])
+      except IndexError:
+        pass
     print(f'{i+1} of {len(sentences)}')
-    if t := s.strip():
+    if t := ''.join(chunk).strip():
       conductor.docs.append(bd.Document(content=t))
 
 def query(q):
@@ -203,21 +237,26 @@ def query(q):
   reply = conductor.generate(
     bd.Instruction(
         role = 'a teacher',
+        detail = 'in as much detail as you can',
         prompt = bd.Prompt(q),
         inject = bd.Injection(
-          n_results=30,
+          n_results=10,
         ),
     ),
     options = bd.Options(
-        output_tokens = 32,
+        output_tokens = 1024,
     ),
   )
   print(reply.content)
   
 
 if __name__ == '__main__':
+  #fetch()
+  #extract()
   #embed()
-  query('why do people migrate?')
+  query('why do people migrate')
+  query('what is migration')
+  query('what is the purpose of a national park')
 ```
 
 

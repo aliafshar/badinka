@@ -140,53 +140,53 @@ uses it to ground responses about this topic.
 
 ### Output (e.g.)
 
-**Factors influencing human migration:**
-
-**Economic factors:**
-
-* Lack of job opportunities
-* Low wages
-* Economic instability
-* High cost of living
-
-
-**Socio-cultural factors:**
-
-* Cultural differences
-* Social networks
-* Family reunification
-* Desire for better education
-
-
-**Political factors:**
-
-* Political persecution
-* War and conflict
-* Seeking asylum
-* Political instability
-
-
-**Environmental factors:**
-
-* Climate change
-* Natural disasters
-* Environmental degradation
-
-
-**General relationship between demographic factors and migration across time:**
-
-* Population growth and urbanization
-* Economic development and inequality
-* Political and social changes
-* Environmental changes
-
-
-**Globalization and its impact on migration:**
-
-* Increased mobility and accessibility of information and transportation
-* Growing interconnectedness of economies and societies
-* Spread of ideas and values
-* Increased awareness of different cultures and perspectives
+> **Factors influencing human migration:**
+> 
+> **Economic factors:**
+> 
+> * Lack of job opportunities
+> * Low wages
+> * Economic instability
+> * High cost of living
+> 
+> 
+> **Socio-cultural factors:**
+> 
+> * Cultural differences
+> * Social networks
+> * Family reunification
+> * Desire for better education
+> 
+> 
+> **Political factors:**
+> 
+> * Political persecution
+> * War and conflict
+> * Seeking asylum
+> * Political instability
+> 
+> 
+> **Environmental factors:**
+> 
+> * Climate change
+> * Natural disasters
+> * Environmental degradation
+> 
+> 
+> **General relationship between demographic factors and migration across time:**
+> 
+> * Population growth and urbanization
+> * Economic development and inequality
+> * Political and social changes
+> * Environmental changes
+> 
+> 
+> **Globalization and its impact on migration:**
+> 
+> * Increased mobility and accessibility of information and transportation
+> * Growing interconnectedness of economies and societies
+> * Spread of ideas and values
+> * Increased awareness of different cultures and perspectives
 ### Code
 ```python
 # https://oer.galileo.usg.edu/geo-textbooks/2/

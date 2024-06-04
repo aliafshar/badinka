@@ -4,6 +4,8 @@
 
 **{{ subtitle }}**
 
+Skip this, go straight to the [API Docs](https://badinka-website.web.app/).
+
 {{ howto }}
 
 

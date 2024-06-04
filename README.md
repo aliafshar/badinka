@@ -2,10 +2,11 @@
 
 **Minimalist AI orchestration library for local LLMs**
 
+Skip this, go straight to the [API Docs](https://badinka-website.web.app/).
 
-# User Guide
 
-## What is a minimalist orchestration framework
+
+## What is a minimalist orchestration framework?
 
 BaDinka provides the following:
 

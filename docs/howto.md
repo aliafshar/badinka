@@ -1,7 +1,6 @@
 
-# User Guide
 
-## What is a minimalist orchestration framework
+## What is a minimalist orchestration framework?
 
 BaDinka provides the following:
 

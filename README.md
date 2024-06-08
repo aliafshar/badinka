@@ -43,8 +43,7 @@ badinka.Config(
 ## Configuration
 
 You can configure the default models and parameters for generation etc in the
-Config class, which can then be overriden for individual calls using Options
-as needed.
+Config class.
 
 ```python
 @dataclass
@@ -73,14 +72,34 @@ class Config:
 
   #: Configuration for logging
   log_config: LogConfig = field(default_factory=LogConfig)
+```
 
-  _log: Log = None
+Additionally, you can set per-generation options passed explicitly to every
+generate call.
 
-  @property
-  def log(self):
-    if not self._log:
-      self._log = Log(self.log_config)
-    return self._log
+```python
+@dataclass
+class Options:
+  """The options for a generation call."""
+
+  #: The number of output tokens
+  output_tokens: int = None
+
+  def as_dict(self) -> dict[str, any]:
+    """Generates the correct keywords for calling Ollama."""
+    return {
+        'num_predict': self.output_tokens,
+    }
+
+  def load_defaults(self, config) -> None: 
+    """Load the default values from the overall configuration.
+
+    Since most parameters have defaults in the configuration but are overridable
+    per individual call, we provide a mechanism to update the unset options from
+    their defaults.
+    """
+    if not self.output_tokens:
+      self.output_tokens = config.generation_output_tokens
 ```
 
 

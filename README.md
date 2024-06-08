@@ -85,21 +85,6 @@ class Options:
   #: The number of output tokens
   output_tokens: int = None
 
-  def as_dict(self) -> dict[str, any]:
-    """Generates the correct keywords for calling Ollama."""
-    return {
-        'num_predict': self.output_tokens,
-    }
-
-  def load_defaults(self, config) -> None: 
-    """Load the default values from the overall configuration.
-
-    Since most parameters have defaults in the configuration but are overridable
-    per individual call, we provide a mechanism to update the unset options from
-    their defaults.
-    """
-    if not self.output_tokens:
-      self.output_tokens = config.generation_output_tokens
 ```
 
 

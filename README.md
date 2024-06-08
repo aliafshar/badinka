@@ -47,6 +47,7 @@ Config class, which can then be overriden for individual calls using Options
 as needed.
 
 ```python
+@dataclass
 class Config:
   """Configuration for all BaDinka activity."""
 
@@ -72,6 +73,14 @@ class Config:
 
   #: Configuration for logging
   log_config: LogConfig = field(default_factory=LogConfig)
+
+  _log: Log = None
+
+  @property
+  def log(self):
+    if not self._log:
+      self._log = Log(self.log_config)
+    return self._log
 ```
 
 

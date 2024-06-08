@@ -47,29 +47,6 @@ Config class, which can then be overriden for individual calls using Options
 as needed.
 
 ```python
-# Copyright 2024 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-"""Configuration settings for BaDinka."""
-
-from dataclasses import dataclass, field
-
-from ._logging import Log, LogConfig
-
-
-@dataclass
 class Config:
   """Configuration for all BaDinka activity."""
 
@@ -95,18 +72,6 @@ class Config:
 
   #: Configuration for logging
   log_config: LogConfig = field(default_factory=LogConfig)
-
-  _log: Log = None
-
-  @property
-  def log(self):
-    if not self._log:
-      self._log = Log(self.log_config)
-    return self._log
-
-
-
-# vim: ft=python sw=2 ts=2 sts=2 tw=80
 ```
 
 

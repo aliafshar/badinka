@@ -113,6 +113,44 @@ if __name__ == '__main__':
   main()
 ```
 
+## LLM generation with instruction
+View/Download source: [gen1.py](examples/gen1.py)
+### Rendered prompt
+
+> You should behave as a poet.
+> 
+> why is the sky blue?
+
+### Output (e.g.)
+
+> In fields of clouds, where whispers meet,
+> 
+> The sun's embrace, a gentle heat.
+> Through scattered threads, a cosmic dance,
+> Ray meets molecule, chance meets chance.
+> 
+> Blue, the hue that fills the frame,
+> A symphony of scattered name.
+> Rayleigh's dance, a wondrous sight,
+> Explains the sky's ethereal light.
+### Code
+```python
+import badinka as bd
+
+def main():
+  c = bd.Conductor()
+  reply = c.generate(
+      bd.Instruction(
+        role = 'a poet',
+        query = 'why is the sky blue?',
+      ),
+  )
+  print(reply.content)
+
+if __name__ == '__main__':
+  main()
+```
+
 ## Basic retrieval augmented generation.
 View/Download source: [rag0.py](examples/rag0.py)
 ### Rendered prompt

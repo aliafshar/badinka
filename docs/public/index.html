@@ -51,6 +51,7 @@ from ._config import Config
 from ._documents import Document, DocumentStore, Query, DocumentList
 from ._generation import Generator, Prompt, Reply, Instruction, \
     Options, Injection
+from ._logging import LogConfig
 
 
 __all__ = [
@@ -61,9 +62,11 @@ __all__ = [
     &#39;Generator&#39;,
     &#39;Injection&#39;,
     &#39;Instruction&#39;,
+    &#39;LogConfig&#39;,
     &#39;Prompt&#39;,
     &#39;Query&#39;,
     &#39;Reply&#39;,
+
 ]
 
 
@@ -81,7 +84,7 @@ __all__ = [
 <dl>
 <dt id="badinka.Conductor"><code class="flex name class">
 <span>class <span class="ident">Conductor</span></span>
-<span>(</span><span>config=None)</span>
+<span>(</span><span>config: badinka._config.Config = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Conductor is the thing you need to run the orchestra.</p></div>
@@ -89,16 +92,12 @@ __all__ = [
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Conductor:
+<pre><code class="python">class Conductor(Configurable):
   &#34;&#34;&#34;Conductor is the thing you need to run the orchestra.&#34;&#34;&#34;
 
-  def __init__(self, config=None):
-    self.config = config or Config()
-    if self.config.logging_enabled:
-      log.enable(&#39;badinka&#39;)
-    log.debug(f&#39;config={self.config}&#39;, action=&#39;start&#39;)
-    self.docs = DocumentStore(self.config)
-    self.generator = Generator(self.config)
+  def configure(self):
+    self.docs: DocumentStore = DocumentStore(self.config)
+    self.generator: Generator = Generator(self.config)
 
   def generate(self,
       generator_input: str | Prompt | Instruction,
@@ -128,8 +127,26 @@ __all__ = [
             generator_input,
             options=options, **prompt_params)</code></pre>
 </details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>badinka._base.Configurable</li>
+</ul>
 <h3>Methods</h3>
 <dl>
+<dt id="badinka.Conductor.configure"><code class="name flex">
+<span>def <span class="ident">configure</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def configure(self):
+  self.docs: DocumentStore = DocumentStore(self.config)
+  self.generator: Generator = Generator(self.config)</code></pre>
+</details>
+</dd>
 <dt id="badinka.Conductor.generate"><code class="name flex">
 <span>def <span class="ident">generate</span></span>(<span>self, generator_input: str | badinka._generation.Prompt | badinka._generation.Instruction, options: badinka._generation.Options = None, **prompt_params: dict[str, any])</span>
 </code></dt>
@@ -172,7 +189,7 @@ __all__ = [
 </dd>
 <dt id="badinka.Config"><code class="flex name class">
 <span>class <span class="ident">Config</span></span>
-<span>(</span><span>generation_model_name: str = 'gemma', generation_output_tokens: int = 64, embeddings_model_name: str = 'mxbai-embed-large', embeddings_url: str = 'http://localhost:11434/api/embeddings', generation_url: str = 'http://localhost:11434/api/generate', vector_store_path: str = ':memory:', logging_enabled: bool = True)</span>
+<span>(</span><span>generation_model_name: str = 'gemma', generation_output_tokens: int = 64, embeddings_model_name: str = 'mxbai-embed-large', embeddings_url: str = 'http://localhost:11434/api/embeddings', generation_url: str = 'http://localhost:11434/api/generate', vector_store_path: str = ':memory:', log_config: badinka._logging.LogConfig = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Configuration for all BaDinka activity.</p></div>
@@ -180,7 +197,7 @@ __all__ = [
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclasses.dataclass
+<pre><code class="python">@dataclass
 class Config:
   &#34;&#34;&#34;Configuration for all BaDinka activity.&#34;&#34;&#34;
 
@@ -204,8 +221,16 @@ class Config:
   #: as a persistent store.
   vector_store_path: str = &#39;:memory:&#39;
 
-  #: Whether logging should be enabled
-  logging_enabled: bool = True</code></pre>
+  #: Configuration for logging
+  log_config: LogConfig = field(default_factory=LogConfig)
+
+  _log: Log = None
+
+  @property
+  def log(self):
+    if not self._log:
+      self._log = Log(self.log_config)
+    return self._log</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -229,15 +254,32 @@ class Config:
 <dd>
 <div class="desc"><p>The Ollama URL used for generation.</p></div>
 </dd>
-<dt id="badinka.Config.logging_enabled"><code class="name">var <span class="ident">logging_enabled</span> : bool</code></dt>
+<dt id="badinka.Config.log_config"><code class="name">var <span class="ident">log_config</span> : badinka._logging.LogConfig</code></dt>
 <dd>
-<div class="desc"><p>Whether logging should be enabled</p></div>
+<div class="desc"><p>Configuration for logging</p></div>
 </dd>
 <dt id="badinka.Config.vector_store_path"><code class="name">var <span class="ident">vector_store_path</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The default vector store path. When using <code>:memory:</code> an in-memory-only
 store is used with no persistence. When a path is given, that path is used
 as a persistent store.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="badinka.Config.log"><code class="name">var <span class="ident">log</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def log(self):
+  if not self._log:
+    self._log = Log(self.log_config)
+  return self._log</code></pre>
+</details>
 </dd>
 </dl>
 </dd>
@@ -372,10 +414,32 @@ extremely useful for:</p>
     &#34;&#34;&#34;Query the documents.&#34;&#34;&#34;
     c = self.collection(collection_name=collection_name)
     results = c.query(**query.as_args())
-    return DocumentList.from_query_response(results)</code></pre>
+    return DocumentList.from_query_response(results)
+
+  def all(self, collection_name=&#39;default&#39;):
+    c = self.collection(collection_name=collection_name)
+    return DocumentList.from_get_response(c.peek(c.count()))
+
+  def __len__(self):
+    c = self.collection(collection_name=&#39;default&#39;)
+    return c.count()</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
+<dt id="badinka.DocumentStore.all"><code class="name flex">
+<span>def <span class="ident">all</span></span>(<span>self, collection_name='default')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def all(self, collection_name=&#39;default&#39;):
+  c = self.collection(collection_name=collection_name)
+  return DocumentList.from_get_response(c.peek(c.count()))</code></pre>
+</details>
+</dd>
 <dt id="badinka.DocumentStore.append"><code class="name flex">
 <span>def <span class="ident">append</span></span>(<span>self, doc, collection_name='default')</span>
 </code></dt>
@@ -501,12 +565,14 @@ extremely useful for:</p>
     &#34;&#34;&#34;Generate a response from simple text.&#34;&#34;&#34;
     if not options:
       options = Options()
+    self.config.log.debug(&#39;generate request&#39;, prompt=text, options=options)
     resp = ollama.generate(
         model=self.config.generation_model_name,
         prompt=text,
         options=options.as_dict(),
     )
     reply = Reply.from_response(resp)
+    self.config.log.debug(&#39;generate response&#39;, reply=reply)
     return reply
 
   def generate_from_prompt(self, prompt: Prompt,
@@ -575,12 +641,14 @@ extremely useful for:</p>
   &#34;&#34;&#34;Generate a response from simple text.&#34;&#34;&#34;
   if not options:
     options = Options()
+  self.config.log.debug(&#39;generate request&#39;, prompt=text, options=options)
   resp = ollama.generate(
       model=self.config.generation_model_name,
       prompt=text,
       options=options.as_dict(),
   )
   reply = Reply.from_response(resp)
+  self.config.log.debug(&#39;generate response&#39;, reply=reply)
   return reply</code></pre>
 </details>
 </dd>
@@ -613,7 +681,7 @@ class Injection:
 </dd>
 <dt id="badinka.Instruction"><code class="flex name class">
 <span>class <span class="ident">Instruction</span></span>
-<span>(</span><span>prompt: badinka._generation.Prompt, inject: badinka._generation.Injection = None, role: str = None, tone: str = None, detail: str = None, context: str = None, query: str = None, template: badinka._generation.Prompt = &lt;factory&gt;)</span>
+<span>(</span><span>prompt: badinka._generation.Prompt = None, query: str = None, inject: badinka._generation.Injection = None, role: str = None, tone: str = None, detail: str = None, context: str = None, template: badinka._generation.Prompt = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The instruction to generate for an LLM</p>
@@ -665,7 +733,13 @@ class Instruction:
   &#34;&#34;&#34;
 
   #: The prompt that provides the last part of the instruction.
-  prompt: Prompt
+  prompt: Prompt = None
+
+
+  #: The query that provides the last part of the instruction.
+  #: Query is provided here as a prompt with no substitutions to save typing
+  #: when a plain prompt is needed.
+  query: str = &#39;&#39;
 
   #: The parameters that control whether context is injected.
   inject: Injection = None
@@ -697,7 +771,9 @@ class Instruction:
 
   def render_query(self, **kw) -&gt; str:
     &#34;&#34;&#34;Renders the query part of the prompt.&#34;&#34;&#34;
-    return self.prompt.render(**kw)
+    if self.prompt:
+      return self.prompt.render(**kw)
+    return self.query
 
   def render(self, **kw) -&gt; str:
     &#34;&#34;&#34;Renders the complete prompt.&#34;&#34;&#34;
@@ -733,8 +809,9 @@ Note: when an injection is provided this is overriden.</p></div>
 </dd>
 <dt id="badinka.Instruction.query"><code class="name">var <span class="ident">query</span> : str</code></dt>
 <dd>
-<div class="desc"><p>The hard-coded text query. If the prompt is provided this will be overriden
-with the rendered prompt.</p></div>
+<div class="desc"><p>The query that provides the last part of the instruction.
+Query is provided here as a prompt with no substitutions to save typing
+when a plain prompt is needed.</p></div>
 </dd>
 <dt id="badinka.Instruction.role"><code class="name">var <span class="ident">role</span> : str</code></dt>
 <dd>
@@ -785,8 +862,36 @@ can be overriden here.</p></div>
 </summary>
 <pre><code class="python">def render_query(self, **kw) -&gt; str:
   &#34;&#34;&#34;Renders the query part of the prompt.&#34;&#34;&#34;
-  return self.prompt.render(**kw)</code></pre>
+  if self.prompt:
+    return self.prompt.render(**kw)
+  return self.query</code></pre>
 </details>
+</dd>
+</dl>
+</dd>
+<dt id="badinka.LogConfig"><code class="flex name class">
+<span>class <span class="ident">LogConfig</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>LogConfig()</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class LogConfig:
+  immediate = False
+  dump_at_exit = False</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="badinka.LogConfig.dump_at_exit"><code class="name">var <span class="ident">dump_at_exit</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="badinka.LogConfig.immediate"><code class="name">var <span class="ident">immediate</span></code></dt>
+<dd>
+<div class="desc"></div>
 </dd>
 </dl>
 </dd>
@@ -1046,6 +1151,7 @@ def from_response(cls, resp):
 <li>
 <h4><code><a title="badinka.Conductor" href="#badinka.Conductor">Conductor</a></code></h4>
 <ul class="">
+<li><code><a title="badinka.Conductor.configure" href="#badinka.Conductor.configure">configure</a></code></li>
 <li><code><a title="badinka.Conductor.generate" href="#badinka.Conductor.generate">generate</a></code></li>
 </ul>
 </li>
@@ -1057,7 +1163,8 @@ def from_response(cls, resp):
 <li><code><a title="badinka.Config.generation_model_name" href="#badinka.Config.generation_model_name">generation_model_name</a></code></li>
 <li><code><a title="badinka.Config.generation_output_tokens" href="#badinka.Config.generation_output_tokens">generation_output_tokens</a></code></li>
 <li><code><a title="badinka.Config.generation_url" href="#badinka.Config.generation_url">generation_url</a></code></li>
-<li><code><a title="badinka.Config.logging_enabled" href="#badinka.Config.logging_enabled">logging_enabled</a></code></li>
+<li><code><a title="badinka.Config.log" href="#badinka.Config.log">log</a></code></li>
+<li><code><a title="badinka.Config.log_config" href="#badinka.Config.log_config">log_config</a></code></li>
 <li><code><a title="badinka.Config.vector_store_path" href="#badinka.Config.vector_store_path">vector_store_path</a></code></li>
 </ul>
 </li>
@@ -1073,6 +1180,7 @@ def from_response(cls, resp):
 <li>
 <h4><code><a title="badinka.DocumentStore" href="#badinka.DocumentStore">DocumentStore</a></code></h4>
 <ul class="two-column">
+<li><code><a title="badinka.DocumentStore.all" href="#badinka.DocumentStore.all">all</a></code></li>
 <li><code><a title="badinka.DocumentStore.append" href="#badinka.DocumentStore.append">append</a></code></li>
 <li><code><a title="badinka.DocumentStore.client" href="#badinka.DocumentStore.client">client</a></code></li>
 <li><code><a title="badinka.DocumentStore.collection" href="#badinka.DocumentStore.collection">collection</a></code></li>
@@ -1108,6 +1216,13 @@ def from_response(cls, resp):
 <li><code><a title="badinka.Instruction.role" href="#badinka.Instruction.role">role</a></code></li>
 <li><code><a title="badinka.Instruction.template" href="#badinka.Instruction.template">template</a></code></li>
 <li><code><a title="badinka.Instruction.tone" href="#badinka.Instruction.tone">tone</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="badinka.LogConfig" href="#badinka.LogConfig">LogConfig</a></code></h4>
+<ul class="">
+<li><code><a title="badinka.LogConfig.dump_at_exit" href="#badinka.LogConfig.dump_at_exit">dump_at_exit</a></code></li>
+<li><code><a title="badinka.LogConfig.immediate" href="#badinka.LogConfig.immediate">immediate</a></code></li>
 </ul>
 </li>
 <li>

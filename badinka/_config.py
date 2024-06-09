@@ -15,13 +15,12 @@
 
 """Configuration settings for BaDinka."""
 
+from dataclasses import dataclass, field
 
-import dataclasses
-
-import loguru
+from ._logging import Log, LogConfig
 
 
-@dataclasses.dataclass
+@dataclass
 class Config:
   """Configuration for all BaDinka activity."""
 
@@ -45,8 +44,17 @@ class Config:
   #: as a persistent store.
   vector_store_path: str = ':memory:'
 
-  #: Whether logging should be enabled
-  logging_enabled: bool = True
+  #: Configuration for logging
+  log_config: LogConfig = field(default_factory=LogConfig)
+
+  _log: Log = None
+
+  @property
+  def log(self):
+    if not self._log:
+      self._log = Log(self.log_config)
+    return self._log
+
 
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

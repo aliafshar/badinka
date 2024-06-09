@@ -86,8 +86,9 @@ uses it to ground responses about this topic.
 original_url = ('https://oer.galileo.usg.edu/cgi/viewcontent.cgi?'
                 'article=1002&context=geo-textbooks')
 
-import PyPDF2
+import argparse
 import urllib.request 
+import PyPDF2
 import badinka as bd
 
 config = bd.Config(
@@ -134,23 +135,55 @@ def query(q):
         role = 'a teacher',
         detail = 'in as much detail as you can',
         prompt = bd.Prompt(q),
-        inject = bd.Injection(
-          n_results=10,
-        ),
+        inject = bd.Injection(),
     ),
     options = bd.Options(
         output_tokens = 1024,
     ),
   )
   print(reply.content)
+
+
+def topiclist():
+  conductor = bd.Conductor(config)
+  #conductor.config._log.config.immediate = True
+  print(len(conductor.docs))
+  p = bd.Prompt(
+      'describe in one word or phrase what this text is about "{{context}}"'
+  )
+  for doc in conductor.docs.all():
+    resp = conductor.generate(p, context=doc.content)
+    print(resp.content)
+
+
+
+def chat():
+  while True:
+    q = input('? ').strip()
+    query(q)
   
+
+def main():
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+      'action',
+      nargs='?',
+      choices=['fetch', 'extract', 'embed', 'chat', 'query'],
+      default='query')
+  args = parser.parse_args()
+  actions = {
+      'fetch': fetch,
+      'extract': extract,
+      'embed': embed,
+      'chat': chat,
+      'query': lambda: query('why do people migrate'),
+  }
+  actions[args.action]()
 
 
 if __name__ == '__main__':
-  fetch()
-  extract()
-  embed()
-  query('why do people migrate')
+  #main()
+  topiclist()
 
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

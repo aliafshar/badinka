@@ -18,8 +18,6 @@ import datetime
 import jinja2
 import ollama
 
-from loguru import logger as log
-
 from ._config import Config
 
 
@@ -93,7 +91,13 @@ class Instruction:
   """
 
   #: The prompt that provides the last part of the instruction.
-  prompt: Prompt
+  prompt: Prompt = None
+
+
+  #: The query that provides the last part of the instruction.
+  #: Query is provided here as a prompt with no substitutions to save typing
+  #: when a plain prompt is needed.
+  query: str = ''
 
   #: The parameters that control whether context is injected.
   inject: Injection = None
@@ -125,7 +129,9 @@ class Instruction:
 
   def render_query(self, **kw) -> str:
     """Renders the query part of the prompt."""
-    return self.prompt.render(**kw)
+    if self.prompt:
+      return self.prompt.render(**kw)
+    return self.query
 
   def render(self, **kw) -> str:
     """Renders the complete prompt."""
@@ -190,12 +196,14 @@ class Generator:
     """Generate a response from simple text."""
     if not options:
       options = Options()
+    self.config.log.debug('generate request', prompt=text, options=options)
     resp = ollama.generate(
         model=self.config.generation_model_name,
         prompt=text,
         options=options.as_dict(),
     )
     reply = Reply.from_response(resp)
+    self.config.log.debug('generate response', reply=reply)
     return reply
 
   def generate_from_prompt(self, prompt: Prompt,

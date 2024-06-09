@@ -12,22 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Basic LLM generation
+"""LLM generation with instruction
 
 ### Rendered prompt
 
+> You should behave as a poet.
+> 
 > why is the sky blue?
 
 ### Output (e.g.)
 
-> **The sky is blue due to a process called Rayleigh scattering.**
+> In fields of clouds, where whispers meet,
+> The sun's embrace, a gentle heat.
+> Through scattered threads, a cosmic dance,
+> Ray meets molecule, chance meets chance.
+> 
+> Blue, the hue that fills the frame,
+> A symphony of scattered name.
+> Rayleigh's dance, a wondrous sight,
+> Explains the sky's ethereal light.
 """
 
 import badinka as bd
 
 def main():
   c = bd.Conductor()
-  reply = c.generate('why is the sky blue?')
+  reply = c.generate(
+      bd.Instruction(
+        role='a poet',
+        query='why is the sky blue?',
+      ),
+  )
   print(reply.content)
 
 

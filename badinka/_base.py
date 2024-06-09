@@ -12,33 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Minimalist AI orchestration library for local LLMs"""
-
-__version__ = '0.1'
+"""Base class functionality."""
 
 
-from ._conductor import Conductor
 from ._config import Config
-from ._documents import Document, DocumentStore, Query, DocumentList
-from ._generation import Generator, Prompt, Reply, Instruction, \
-    Options, Injection
-from ._logging import LogConfig
 
+class Configurable:
+  """Base class that has configuration."""
 
-__all__ = [
-    'Conductor',
-    'Config',
-    'Document',
-    'DocumentStore',
-    'Generator',
-    'Injection',
-    'Instruction',
-    'LogConfig',
-    'Prompt',
-    'Query',
-    'Reply',
+  def __init__(self, config: Config = None):
+    self.config = config or Config()
+    self.log = self.config.log
+    self.configure()
 
-]
+  def configure(self):
+    pass
+
 
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

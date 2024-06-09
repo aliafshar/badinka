@@ -15,22 +15,18 @@
 
 from dataclasses import dataclass, field
 
-from ._logging import log
+from ._base import Configurable
 from ._config import Config
 from ._documents import Document, DocumentStore, Query
 from ._generation import Generator, Prompt, Reply, Instruction, Options
   
 
-class Conductor:
+class Conductor(Configurable):
   """Conductor is the thing you need to run the orchestra."""
 
-  def __init__(self, config=None):
-    self.config = config or Config()
-    if self.config.logging_enabled:
-      log.enable('badinka')
-    log.debug(f'config={self.config}', action='start')
-    self.docs = DocumentStore(self.config)
-    self.generator = Generator(self.config)
+  def configure(self):
+    self.docs: DocumentStore = DocumentStore(self.config)
+    self.generator: Generator = Generator(self.config)
 
   def generate(self,
       generator_input: str | Prompt | Instruction,

@@ -72,19 +72,33 @@ def write_readme():
   out = t.render(
       subtitle = read_docstring(),
       examples = read_examples(),
-      howto = read_howto(),
       motivation = read_motivation(),
+      config = read_config(),
+      options = read_options(),
   )
   f = open('README.md', 'w')
   f.write(out)
   f.close()
 
 
-def read_howto():
-  f = open('docs/howto.md')
-  howto = f.read()
-  f.close()
-  return howto
+def read_config():
+  context = pdoc.Context()
+  mod = pdoc.Module('badinka._config', context=context)
+  cls = mod.classes()[0]
+  srclines = cls.source.splitlines()[:-8]
+  csource = '\n'.join(srclines)
+  return csource
+
+
+def read_options():
+  context = pdoc.Context()
+  mod = pdoc.Module('badinka._generation', context=context)
+  for cls in mod.classes():
+    if cls.name == 'Options':
+      break
+  srclines = cls.source.splitlines()[:-15]
+  csource = '\n'.join(srclines)
+  return csource
 
 
 def read_motivation():
@@ -103,6 +117,7 @@ def read_docstring():
 def read_examples():
   eg_namess = [
       'gen0',
+      'gen1',
       'rag0',
       'rag1',
   ]

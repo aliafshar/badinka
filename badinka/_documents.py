@@ -195,4 +195,13 @@ class DocumentStore:
     results = c.query(**query.as_args())
     return DocumentList.from_query_response(results)
 
+  def all(self, collection_name='default'):
+    c = self.collection(collection_name=collection_name)
+    return DocumentList.from_get_response(c.peek(c.count()))
+
+  def __len__(self):
+    c = self.collection(collection_name='default')
+    return c.count()
+
+
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

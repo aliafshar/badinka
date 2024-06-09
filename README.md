@@ -206,6 +206,31 @@ if __name__ == '__main__':
   main()
 ```
 
+## LLM generation with options
+View/Download source: [gen3.py](examples/gen3.py)
+### Rendered prompt
+
+> why is the sky blue?
+
+### Output (e.g.)
+
+> **The sky is
+### Code
+```python
+import badinka as bd
+
+def main():
+  c = bd.Conductor()
+  reply = c.generate(
+      'why is the sky blue?',
+      bd.Options(output_tokens=4),
+  )
+  print(reply.content)
+
+if __name__ == '__main__':
+  main()
+```
+
 ## Basic retrieval augmented generation.
 View/Download source: [rag0.py](examples/rag0.py)
 ### Rendered prompt

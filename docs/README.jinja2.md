@@ -16,6 +16,20 @@ BaDinka provides the following:
 and simplifies the connection between them in order to prompt the LLM with
 instructions.
 
+## Installation
+
+The dependencies are:
+
+1. Jinja2 (for templating)
+2. Ollama client library (for talking to Ollama)
+3. Chroma db client library (for talking to Chroma)
+
+So, in whatever virtualenv setup you have:
+
+```shell
+pip install jinja2 ollama chromadb
+```
+
 ## Underlying infrastructure
 
 ### Generation and embedding models
@@ -60,6 +74,9 @@ generate call.
 
 
 # Examples
+
+(these are automatically imported from the [examples/](examples/) directory of
+the source code)
 
 {% for example in examples %}
 ## {{ example.summary }}

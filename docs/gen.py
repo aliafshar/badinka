@@ -21,8 +21,6 @@ import dataclasses
 import jinja2
 import pdoc
 
-from loguru import logger as log
-
 
 @dataclasses.dataclass
 class Example:
@@ -115,16 +113,18 @@ def read_docstring():
 
 
 def read_examples():
-  eg_namess = [
+  eg_names = [
       'gen0',
       'gen1',
+      'gen2',
+      'gen3',
       'rag0',
       'rag1',
   ]
   sys.path.append('examples')
   context = pdoc.Context()
   egs = []
-  for eg_name in eg_namess:
+  for eg_name in eg_names:
     mod = pdoc.Module(eg_name, context=context)
     print(mod.name, mod.qualname)
     egs.append(Example.from_mod(mod))

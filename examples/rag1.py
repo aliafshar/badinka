@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Geography tutor
+"""Retrieval augmented generation from a text book
 
 This example fetches, parses and loads an open Human Geography textbook, and
 uses it to ground responses about this topic.
@@ -182,8 +182,7 @@ def main():
 
 
 if __name__ == '__main__':
-  #main()
-  topiclist()
+  main()
 
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

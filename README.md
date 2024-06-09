@@ -150,6 +150,45 @@ if __name__ == '__main__':
   main()
 ```
 
+## LLM generation with prompt substitution
+View/Download source: [gen2.py](examples/gen2.py)
+### Rendered prompt
+
+> Decsribe the effect of interest rates on house prices.
+
+### Output (e.g.)
+
+> **Interest rates have a significant impact on house prices:**
+> 
+> **1. Rising Interest Rates:**
+> 
+> * Increased borrowing costs reduce affordability.
+> * Reduced demand can lead to lower house prices.
+> * Investors may reduce investment in the housing market due to higher
+>   borrowing costs.
+> 
+> 
+> **2. Falling Interest Rates:**
+> 
+> * Lower borrowing costs increase affordability, making homeownership more
+>   attainable.
+> * Increased demand can drive up house prices.
+> * Investors may become more active in the housing market due to lower
+>   borrowing costs.
+### Code
+```python
+import badinka as bd
+
+def main():
+  c = bd.Conductor()
+  p = bd.Prompt('describe the effect of {{cause}} on {{effect}}')
+  reply = c.generate(p, cause='interest rates', effect='house prices')
+  print(reply.content)
+
+if __name__ == '__main__':
+  main()
+```
+
 ## Basic retrieval augmented generation.
 View/Download source: [rag0.py](examples/rag0.py)
 ### Rendered prompt

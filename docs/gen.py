@@ -54,7 +54,7 @@ class Example:
 
 def write_module(name, html):
   path = f'docs/public/{name}.html'
-  log.info(f'{name} -> {path}', action='write')
+  print(f'{name} -> {path}', action='write')
   with open(path, 'w') as f:
     f.write(html)
 

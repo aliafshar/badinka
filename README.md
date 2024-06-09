@@ -232,7 +232,7 @@ if __name__ == '__main__':
   main()
 ```
 
-## Geography tutor
+## Retrieval augmented generation from a text book
 View/Download source: [rag1.py](examples/rag1.py)
 This example fetches, parses and loads an open Human Geography textbook, and
 uses it to ground responses about this topic.
@@ -397,8 +397,7 @@ def main():
   actions[args.action]()
 
 if __name__ == '__main__':
-  #main()
-  topiclist()
+  main()
 ```
 
 

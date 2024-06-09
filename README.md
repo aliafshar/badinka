@@ -124,7 +124,6 @@ View/Download source: [gen1.py](examples/gen1.py)
 ### Output (e.g.)
 
 > In fields of clouds, where whispers meet,
-> 
 > The sun's embrace, a gentle heat.
 > Through scattered threads, a cosmic dance,
 > Ray meets molecule, chance meets chance.
@@ -141,8 +140,8 @@ def main():
   c = bd.Conductor()
   reply = c.generate(
       bd.Instruction(
-        role = 'a poet',
-        query = 'why is the sky blue?',
+        role='a poet',
+        query='why is the sky blue?',
       ),
   )
   print(reply.content)

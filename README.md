@@ -238,7 +238,7 @@ if __name__ == '__main__':
 View/Download source: [gen4.py](examples/gen4.py)
 ### Rendered prompt
 
-> Name some things in the sky, and their colour, in JSON
+> Name some things in the sky, and their color, in JSON
 
 ### Output (e.g.)
 
@@ -247,11 +247,11 @@ View/Download source: [gen4.py](examples/gen4.py)
   "sky_elements": [
     {
       "name": "Sun",
-      "colour": "#FFD700"
+      "color": "#FFD700"
     },
     {
       "name": "Moon",
-      "colour": "#FFFFFF"
+      "color": "#FFFFFF"
     }
   ]
 }

@@ -59,6 +59,12 @@ badinka.Config(
 You can configure the default models and parameters for generation etc in the
 Config class.
 
+
+### Ollama options:
+
+* `generation_model`: change this to choose the model that ollama uses by
+  default for generations.
+
 ```python
 @dataclass
 class Config:
@@ -101,6 +107,14 @@ class Config:
 
   #: Configuration for logging
   log_config: LogConfig = field(init=False, repr=False)
+
+  def __post_init__(self):
+    self.log = Log(
+        LogConfig(
+          immediate = self.log_immediate,
+          dump_at_exit = self.log_dump_at_exit,
+        ),
+    )
 ```
 
 Additionally, you can set per-generation options passed explicitly to every

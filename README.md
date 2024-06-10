@@ -84,8 +84,14 @@ class Config:
   #: as a persistent store.
   vector_store_path: str = ':memory:'
 
+  #: Whether logging calls should be immediately dumped to stdout
+  log_immediate: bool = False
+
+  #: Whether logging should dump the entire log at exit
+  log_dump_at_exit: bool = False
+
   #: Configuration for logging
-  log_config: LogConfig = field(default_factory=LogConfig)
+  log_config: LogConfig = field(init=False)
 ```
 
 Additionally, you can set per-generation options passed explicitly to every
@@ -264,7 +270,10 @@ def main():
   c = bd.Conductor()
   reply = c.generate(
       'Name some things in the sky, and their colour, in JSON',
-      options=bd.Options(json=True),
+      options=bd.Options(
+        json=True,
+        tokens=1024,
+      ),
   )
   print(reply.content)
 

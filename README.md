@@ -101,9 +101,6 @@ class Config:
   #: Whether logging should dump the entire log at exit
   log_dump_at_exit: bool = False
 
-  #: Configuration for logging
-  log_config: LogConfig = field(init=False, repr=False)
-
 ```
 
 Additionally, you can set per-generation options passed explicitly to every
@@ -124,6 +121,8 @@ class Options:
   temperature: float = None
 
   #: The model to use for generation
+  model: str = None
+
 ```
 
 

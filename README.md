@@ -104,13 +104,6 @@ class Config:
   #: Configuration for logging
   log_config: LogConfig = field(init=False, repr=False)
 
-  def __post_init__(self):
-    self.log = Log(
-        LogConfig(
-          immediate = self.log_immediate,
-          dump_at_exit = self.log_dump_at_exit,
-        ),
-    )
 ```
 
 Additionally, you can set per-generation options passed explicitly to every
@@ -133,11 +126,6 @@ class Options:
   #: The model to use for generation
   model: str = None
 
-  def as_dict(self, config: Config) -> dict[str, any]:
-    """Generates the correct keywords for calling Ollama."""
-    d = {
-        'num_predict': config.generation_tokens,
-        'temperature': config.generation_temperature,
 ```
 
 

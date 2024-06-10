@@ -12,15 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""LLM generation with options
+"""LLM generation with JSON output
 
 ### Rendered prompt
 
-> why is the sky blue?
+> Name some things in the sky, and their color, in JSON
 
 ### Output (e.g.)
 
-> **The sky is
+```json
+{
+  "sky_elements": [
+    {
+      "name": "Sun",
+      "color": "#FFD700"
+    },
+    {
+      "name": "Moon",
+      "color": "#FFFFFF"
+    }
+  ]
+}
+```
 """
 
 import badinka as bd
@@ -28,8 +41,11 @@ import badinka as bd
 def main():
   c = bd.Conductor()
   reply = c.generate(
-      'why is the sky blue?',
-      bd.Options(tokens=4),
+      'Name some things in the sky, and their colour, in JSON',
+      options=bd.Options(
+        json=True,
+        tokens=1024,
+      ),
   )
   print(reply.content)
 

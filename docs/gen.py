@@ -54,7 +54,7 @@ class Example:
 
 def write_module(name, html):
   path = f'docs/public/{name}.html'
-  print(f'{name} -> {path}', action='write')
+  print(f'{name} -> {path}')
   with open(path, 'w') as f:
     f.write(html)
 
@@ -94,7 +94,7 @@ def read_options():
   for cls in mod.classes():
     if cls.name == 'Options':
       break
-  srclines = cls.source.splitlines()[:-15]
+  srclines = cls.source.splitlines()[:-10]
   csource = '\n'.join(srclines)
   return csource
 
@@ -118,6 +118,7 @@ def read_examples():
       'gen1',
       'gen2',
       'gen3',
+      'gen4',
       'rag0',
       'rag1',
   ]

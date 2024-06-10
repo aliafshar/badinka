@@ -26,23 +26,21 @@ class Options:
   """The options for a generation call."""
 
   #: The number of output tokens
-  output_tokens: int = None
+  tokens: int = None
 
-  def as_dict(self) -> dict[str, any]:
+  #: The output format (only "json" is acceptable)
+  json: bool = False
+
+  def as_dict(self, config: Config) -> dict[str, any]:
     """Generates the correct keywords for calling Ollama."""
-    return {
-        'num_predict': self.output_tokens,
+    d = {
+        'num_predict': config.generation_output_tokens,
     }
-
-  def load_defaults(self, config) -> None: 
-    """Load the default values from the overall configuration.
-
-    Since most parameters have defaults in the configuration but are overridable
-    per individual call, we provide a mechanism to update the unset options from
-    their defaults.
-    """
-    if not self.output_tokens:
-      self.output_tokens = config.generation_output_tokens
+    if self.tokens:
+      d['num_predict'] = self.tokens
+    if self.json:
+      d['format'] = 'json'
+    return d
 
 
 @dataclass
@@ -200,7 +198,7 @@ class Generator:
     resp = ollama.generate(
         model=self.config.generation_model_name,
         prompt=text,
-        options=options.as_dict(),
+        options=options.as_dict(self.config),
     )
     reply = Reply.from_response(resp)
     self.config.log.debug('generate response', reply=reply)

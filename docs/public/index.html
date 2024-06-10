@@ -569,7 +569,7 @@ extremely useful for:</p>
     resp = ollama.generate(
         model=self.config.generation_model_name,
         prompt=text,
-        options=options.as_dict(),
+        options=options.as_dict(self.config),
     )
     reply = Reply.from_response(resp)
     self.config.log.debug(&#39;generate response&#39;, reply=reply)
@@ -645,7 +645,7 @@ extremely useful for:</p>
   resp = ollama.generate(
       model=self.config.generation_model_name,
       prompt=text,
-      options=options.as_dict(),
+      options=options.as_dict(self.config),
   )
   reply = Reply.from_response(resp)
   self.config.log.debug(&#39;generate response&#39;, reply=reply)

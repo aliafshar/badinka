@@ -97,6 +97,11 @@ class Options:
   """The options for a generation call."""
 
   #: The number of output tokens
+  tokens: int = None
+
+  #: The output format (only "json" is acceptable)
+  json: bool = False
+
 ```
 
 

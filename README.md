@@ -65,19 +65,28 @@ class Config:
   """Configuration for all BaDinka activity."""
 
   #: The default Ollama model used for text generation.
-  generation_model_name: str = 'gemma'
+  generation_model: str = 'gemma'
 
   #: The default number of output tokens for generation.
-  generation_output_tokens: int = 64
+  generation_tokens: int = 64
 
-  #: The default Ollama model used for generating embeddings.
-  embeddings_model_name: str = 'mxbai-embed-large'
+  #: The default generation temperature
+  generation_temperature: float = 0.7
 
-  #: The Ollama URL used for embeddings.
-  embeddings_url: str = 'http://localhost:11434/api/embeddings'
+  #: The default generation top_k
+  generation_topk: int = 40
+
+  #: The default generation top_p
+  generation_topp: float = 0.9
 
   #: The Ollama URL used for generation.
   generation_url: str = 'http://localhost:11434/api/generate'
+
+  #: The default Ollama model used for generating embeddings.
+  embeddings_model: str = 'mxbai-embed-large'
+
+  #: The Ollama URL used for embeddings.
+  embeddings_url: str = 'http://localhost:11434/api/embeddings'
 
   #: The default vector store path. When using `:memory:` an in-memory-only
   #: store is used with no persistence. When a path is given, that path is used
@@ -108,6 +117,17 @@ class Options:
   #: The output format (only "json" is acceptable)
   json: bool = False
 
+  #: The generation temperature
+  temperature: float = None
+
+  #: The model to use for generation
+  model: str = None
+
+  def as_dict(self, config: Config) -> dict[str, any]:
+    """Generates the correct keywords for calling Ollama."""
+    d = {
+        'num_predict': config.generation_tokens,
+        'temperature': config.generation_temperature,
 ```
 
 
@@ -448,7 +468,7 @@ def query(q):
         inject = bd.Injection(),
     ),
     options = bd.Options(
-        output_tokens = 1024,
+        tokens = 1024,
     ),
   )
   print(reply.content)
@@ -461,7 +481,7 @@ def topiclist():
       'describe in one word or phrase what this text is about "{{context}}"'
   )
   for doc in conductor.docs.all():
-    resp = conductor.generate(p, context=doc.content)
+    resp = conductor.generate(p, options=bd.Options(tokens=8), context=doc.content)
     print(resp.content)
 
 
@@ -489,6 +509,7 @@ def main():
   actions[args.action]()
 
 if __name__ == '__main__':
+  #topiclist()
   main()
 ```
 

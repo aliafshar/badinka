@@ -124,8 +124,6 @@ class Options:
   temperature: float = None
 
   #: The model to use for generation
-  model: str = None
-
 ```
 
 

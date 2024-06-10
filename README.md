@@ -97,8 +97,6 @@ class Options:
   """The options for a generation call."""
 
   #: The number of output tokens
-  output_tokens: int = None
-
 ```
 
 
@@ -223,7 +221,45 @@ def main():
   c = bd.Conductor()
   reply = c.generate(
       'why is the sky blue?',
-      bd.Options(output_tokens=4),
+      bd.Options(tokens=4),
+  )
+  print(reply.content)
+
+if __name__ == '__main__':
+  main()
+```
+
+## LLM generation with JSON output
+View/Download source: [gen4.py](examples/gen4.py)
+### Rendered prompt
+
+> Name some things in the sky, and their colour, in JSON
+
+### Output (e.g.)
+
+```json
+{
+  "sky_elements": [
+    {
+      "name": "Sun",
+      "colour": "#FFD700"
+    },
+    {
+      "name": "Moon",
+      "colour": "#FFFFFF"
+    }
+  ]
+}
+```
+### Code
+```python
+import badinka as bd
+
+def main():
+  c = bd.Conductor()
+  reply = c.generate(
+      'Name some things in the sky, and their colour, in JSON',
+      options=bd.Options(json=True),
   )
   print(reply.content)
 

@@ -91,7 +91,7 @@ class Config:
   log_dump_at_exit: bool = False
 
   #: Configuration for logging
-  log_config: LogConfig = field(init=False)
+  log_config: LogConfig = field(init=False, repr=False)
 ```
 
 Additionally, you can set per-generation options passed explicitly to every

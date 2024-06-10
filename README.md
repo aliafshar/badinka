@@ -60,10 +60,6 @@ You can configure the default models and parameters for generation etc in the
 Config class.
 
 
-### Ollama options:
-
-* `generation_model`: change this to choose the model that ollama uses by
-  default for generations.
 
 ```python
 @dataclass

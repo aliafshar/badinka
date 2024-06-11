@@ -370,8 +370,6 @@ View/Download source: [tool0.py](examples/tool0.py)
 >                     -- Sir Walter Scott, "Marmion"
 ### Code
 ```python
-"""
-
 import subprocess
 import badinka as bd
 

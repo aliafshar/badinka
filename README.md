@@ -357,7 +357,7 @@ View/Download source: [tool0.py](examples/tool0.py)
 >   "arguments": {
 >     "command": "string"
 >   },
->   "description": "read a fortune",
+>   "description": "execute a shell command",
 >   "name": "exec"
 > }
 > 
@@ -379,7 +379,7 @@ class ExecTool(bd.Tool):
   """A tool to execute arbitrary shell commands (!)"""
 
   name = 'exec'
-  description = 'read a fortune'
+  description = 'execute a shell command'
   arguments = {'command': 'string'}
 
   def do(self, **kw):

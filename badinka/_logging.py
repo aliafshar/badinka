@@ -65,8 +65,8 @@ class Colors:
 
 @dataclass
 class LogConfig:
-  immediate = False
-  dump_at_exit = False
+  immediate: bool = False
+  dump_at_exit: bool = False
 
 
 class LogLevel(enum.Enum):

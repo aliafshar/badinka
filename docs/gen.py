@@ -67,11 +67,13 @@ def write_readme():
   f = open('docs/README.jinja2.md')
   t = jinja2.Template(f.read())
   f.close()
+  config_instruction, config_source = read_config()
   out = t.render(
       subtitle = read_docstring(),
       examples = read_examples(),
       motivation = read_motivation(),
-      config = read_config(),
+      config_instruction = config_instruction,
+      config = config_source,
       options = read_options(),
   )
   f = open('README.md', 'w')
@@ -83,9 +85,16 @@ def read_config():
   context = pdoc.Context()
   mod = pdoc.Module('badinka._config', context=context)
   cls = mod.classes()[0]
-  srclines = cls.source.splitlines()[:-8]
-  csource = '\n'.join(srclines)
-  return csource
+  srclines = cls.source.splitlines()
+  alines = []
+  for l in srclines:
+    if l.strip().startswith('def'):
+      break
+    alines.append(l)
+  csource = '\n'.join(alines)
+  ilines = mod.docstring.splitlines()[1:]
+  isource = '\n'.join(ilines)
+  return isource, csource
 
 
 def read_options():
@@ -94,8 +103,13 @@ def read_options():
   for cls in mod.classes():
     if cls.name == 'Options':
       break
-  srclines = cls.source.splitlines()[:-10]
-  csource = '\n'.join(srclines)
+  srclines = cls.source.splitlines()
+  alines = []
+  for l in srclines:
+    if l.strip().startswith('def'):
+      break
+    alines.append(l)
+  csource = '\n'.join(alines)
   return csource
 
 

@@ -26,6 +26,7 @@ from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 
 
 from ._config import Config
+from ._base import Configurable
 
 
 
@@ -140,17 +141,16 @@ class Query:
     }
 
 
-class DocumentStore:
+class DocumentStore(Configurable):
   """Stores and retrieves documents in a vector database
 
   In our case, we use ChromaDB.
   """
 
-  def __init__(self, config: Config):
-    self.config = config
+  def configure(self):
     self.embedding_function = OllamaEmbeddingFunction(
         url=self.config.embeddings_url,
-        model_name=self.config.embeddings_model_name,
+        model_name=self.config.embeddings_model,
     )
 
   def client(self):

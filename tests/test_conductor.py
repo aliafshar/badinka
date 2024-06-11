@@ -16,8 +16,8 @@
 import pytest
 import badinka
 
-_options = badinka.Options(output_tokens=16)
-_config = badinka.Config(generation_model_name='orca-mini')
+_options = badinka.Options(tokens=16)
+_config = badinka.Config(generation_model='orca-mini')
 
 def test_docs():
   p = badinka.Conductor()

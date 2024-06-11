@@ -189,7 +189,7 @@ __all__ = [
 </dd>
 <dt id="badinka.Config"><code class="flex name class">
 <span>class <span class="ident">Config</span></span>
-<span>(</span><span>generation_model_name: str = 'gemma', generation_output_tokens: int = 64, embeddings_model_name: str = 'mxbai-embed-large', embeddings_url: str = 'http://localhost:11434/api/embeddings', generation_url: str = 'http://localhost:11434/api/generate', vector_store_path: str = ':memory:', log_config: badinka._logging.LogConfig = &lt;factory&gt;)</span>
+<span>(</span><span>generation_model: str = 'gemma', generation_tokens: int = 64, generation_temperature: float = 0.7, generation_topk: int = 40, generation_topp: float = 0.9, generation_url: str = 'http://localhost:11434/api/generate', embeddings_model: str = 'mxbai-embed-large', embeddings_url: str = 'http://localhost:11434/api/embeddings', vector_store_path: str = ':memory:', log_immediate: bool = False, log_dump_at_exit: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Configuration for all BaDinka activity.</p></div>
@@ -202,39 +202,51 @@ class Config:
   &#34;&#34;&#34;Configuration for all BaDinka activity.&#34;&#34;&#34;
 
   #: The default Ollama model used for text generation.
-  generation_model_name: str = &#39;gemma&#39;
+  generation_model: str = &#39;gemma&#39;
 
   #: The default number of output tokens for generation.
-  generation_output_tokens: int = 64
+  generation_tokens: int = 64
 
-  #: The default Ollama model used for generating embeddings.
-  embeddings_model_name: str = &#39;mxbai-embed-large&#39;
+  #: The default generation temperature
+  generation_temperature: float = 0.7
 
-  #: The Ollama URL used for embeddings.
-  embeddings_url: str = &#39;http://localhost:11434/api/embeddings&#39;
+  #: The default generation top_k
+  generation_topk: int = 40
+
+  #: The default generation top_p
+  generation_topp: float = 0.9
 
   #: The Ollama URL used for generation.
   generation_url: str = &#39;http://localhost:11434/api/generate&#39;
+
+  #: The default Ollama model used for generating embeddings.
+  embeddings_model: str = &#39;mxbai-embed-large&#39;
+
+  #: The Ollama URL used for embeddings.
+  embeddings_url: str = &#39;http://localhost:11434/api/embeddings&#39;
 
   #: The default vector store path. When using `:memory:` an in-memory-only
   #: store is used with no persistence. When a path is given, that path is used
   #: as a persistent store.
   vector_store_path: str = &#39;:memory:&#39;
 
-  #: Configuration for logging
-  log_config: LogConfig = field(default_factory=LogConfig)
+  #: Whether logging calls should be immediately dumped to stdout
+  log_immediate: bool = False
 
-  _log: Log = None
+  #: Whether logging should dump the entire log at exit
+  log_dump_at_exit: bool = False
 
-  @property
-  def log(self):
-    if not self._log:
-      self._log = Log(self.log_config)
-    return self._log</code></pre>
+  def __post_init__(self):
+    self.log = Log(
+        LogConfig(
+          immediate = self.log_immediate,
+          dump_at_exit = self.log_dump_at_exit,
+        ),
+    )</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="badinka.Config.embeddings_model_name"><code class="name">var <span class="ident">embeddings_model_name</span> : str</code></dt>
+<dt id="badinka.Config.embeddings_model"><code class="name">var <span class="ident">embeddings_model</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The default Ollama model used for generating embeddings.</p></div>
 </dd>
@@ -242,44 +254,43 @@ class Config:
 <dd>
 <div class="desc"><p>The Ollama URL used for embeddings.</p></div>
 </dd>
-<dt id="badinka.Config.generation_model_name"><code class="name">var <span class="ident">generation_model_name</span> : str</code></dt>
+<dt id="badinka.Config.generation_model"><code class="name">var <span class="ident">generation_model</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The default Ollama model used for text generation.</p></div>
 </dd>
-<dt id="badinka.Config.generation_output_tokens"><code class="name">var <span class="ident">generation_output_tokens</span> : int</code></dt>
+<dt id="badinka.Config.generation_temperature"><code class="name">var <span class="ident">generation_temperature</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The default generation temperature</p></div>
+</dd>
+<dt id="badinka.Config.generation_tokens"><code class="name">var <span class="ident">generation_tokens</span> : int</code></dt>
 <dd>
 <div class="desc"><p>The default number of output tokens for generation.</p></div>
+</dd>
+<dt id="badinka.Config.generation_topk"><code class="name">var <span class="ident">generation_topk</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The default generation top_k</p></div>
+</dd>
+<dt id="badinka.Config.generation_topp"><code class="name">var <span class="ident">generation_topp</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The default generation top_p</p></div>
 </dd>
 <dt id="badinka.Config.generation_url"><code class="name">var <span class="ident">generation_url</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The Ollama URL used for generation.</p></div>
 </dd>
-<dt id="badinka.Config.log_config"><code class="name">var <span class="ident">log_config</span> : badinka._logging.LogConfig</code></dt>
+<dt id="badinka.Config.log_dump_at_exit"><code class="name">var <span class="ident">log_dump_at_exit</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Configuration for logging</p></div>
+<div class="desc"><p>Whether logging should dump the entire log at exit</p></div>
+</dd>
+<dt id="badinka.Config.log_immediate"><code class="name">var <span class="ident">log_immediate</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Whether logging calls should be immediately dumped to stdout</p></div>
 </dd>
 <dt id="badinka.Config.vector_store_path"><code class="name">var <span class="ident">vector_store_path</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The default vector store path. When using <code>:memory:</code> an in-memory-only
 store is used with no persistence. When a path is given, that path is used
 as a persistent store.</p></div>
-</dd>
-</dl>
-<h3>Instance variables</h3>
-<dl>
-<dt id="badinka.Config.log"><code class="name">var <span class="ident">log</span></code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@property
-def log(self):
-  if not self._log:
-    self._log = Log(self.log_config)
-  return self._log</code></pre>
-</details>
 </dd>
 </dl>
 </dd>
@@ -352,7 +363,7 @@ extremely useful for:</p>
 </dd>
 <dt id="badinka.DocumentStore"><code class="flex name class">
 <span>class <span class="ident">DocumentStore</span></span>
-<span>(</span><span>config: badinka._config.Config)</span>
+<span>(</span><span>config: badinka._config.Config = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Stores and retrieves documents in a vector database</p>
@@ -361,17 +372,16 @@ extremely useful for:</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class DocumentStore:
+<pre><code class="python">class DocumentStore(Configurable):
   &#34;&#34;&#34;Stores and retrieves documents in a vector database
 
   In our case, we use ChromaDB.
   &#34;&#34;&#34;
 
-  def __init__(self, config: Config):
-    self.config = config
+  def configure(self):
     self.embedding_function = OllamaEmbeddingFunction(
         url=self.config.embeddings_url,
-        model_name=self.config.embeddings_model_name,
+        model_name=self.config.embeddings_model,
     )
 
   def client(self):
@@ -424,6 +434,10 @@ extremely useful for:</p>
     c = self.collection(collection_name=&#39;default&#39;)
     return c.count()</code></pre>
 </details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>badinka._base.Configurable</li>
+</ul>
 <h3>Methods</h3>
 <dl>
 <dt id="badinka.DocumentStore.all"><code class="name flex">
@@ -485,6 +499,22 @@ extremely useful for:</p>
   return self.client().get_or_create_collection(
       collection_name,
       embedding_function=self.embedding_function,
+  )</code></pre>
+</details>
+</dd>
+<dt id="badinka.DocumentStore.configure"><code class="name flex">
+<span>def <span class="ident">configure</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def configure(self):
+  self.embedding_function = OllamaEmbeddingFunction(
+      url=self.config.embeddings_url,
+      model_name=self.config.embeddings_model,
   )</code></pre>
 </details>
 </dd>
@@ -567,7 +597,7 @@ extremely useful for:</p>
       options = Options()
     self.config.log.debug(&#39;generate request&#39;, prompt=text, options=options)
     resp = ollama.generate(
-        model=self.config.generation_model_name,
+        model=options.model or self.config.generation_model,
         prompt=text,
         options=options.as_dict(self.config),
     )
@@ -643,7 +673,7 @@ extremely useful for:</p>
     options = Options()
   self.config.log.debug(&#39;generate request&#39;, prompt=text, options=options)
   resp = ollama.generate(
-      model=self.config.generation_model_name,
+      model=options.model or self.config.generation_model,
       prompt=text,
       options=options.as_dict(self.config),
   )
@@ -734,7 +764,6 @@ class Instruction:
 
   #: The prompt that provides the last part of the instruction.
   prompt: Prompt = None
-
 
   #: The query that provides the last part of the instruction.
   #: Query is provided here as a prompt with no substitutions to save typing
@@ -871,25 +900,26 @@ can be overriden here.</p></div>
 </dd>
 <dt id="badinka.LogConfig"><code class="flex name class">
 <span>class <span class="ident">LogConfig</span></span>
+<span>(</span><span>immediate: bool = False, dump_at_exit: bool = False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>LogConfig()</p></div>
+<div class="desc"><p>LogConfig(immediate: bool = False, dump_at_exit: bool = False)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@dataclass
 class LogConfig:
-  immediate = False
-  dump_at_exit = False</code></pre>
+  immediate: bool = False
+  dump_at_exit: bool = False</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="badinka.LogConfig.dump_at_exit"><code class="name">var <span class="ident">dump_at_exit</span></code></dt>
+<dt id="badinka.LogConfig.dump_at_exit"><code class="name">var <span class="ident">dump_at_exit</span> : bool</code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="badinka.LogConfig.immediate"><code class="name">var <span class="ident">immediate</span></code></dt>
+<dt id="badinka.LogConfig.immediate"><code class="name">var <span class="ident">immediate</span> : bool</code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -1158,13 +1188,16 @@ def from_response(cls, resp):
 <li>
 <h4><code><a title="badinka.Config" href="#badinka.Config">Config</a></code></h4>
 <ul class="">
-<li><code><a title="badinka.Config.embeddings_model_name" href="#badinka.Config.embeddings_model_name">embeddings_model_name</a></code></li>
+<li><code><a title="badinka.Config.embeddings_model" href="#badinka.Config.embeddings_model">embeddings_model</a></code></li>
 <li><code><a title="badinka.Config.embeddings_url" href="#badinka.Config.embeddings_url">embeddings_url</a></code></li>
-<li><code><a title="badinka.Config.generation_model_name" href="#badinka.Config.generation_model_name">generation_model_name</a></code></li>
-<li><code><a title="badinka.Config.generation_output_tokens" href="#badinka.Config.generation_output_tokens">generation_output_tokens</a></code></li>
+<li><code><a title="badinka.Config.generation_model" href="#badinka.Config.generation_model">generation_model</a></code></li>
+<li><code><a title="badinka.Config.generation_temperature" href="#badinka.Config.generation_temperature">generation_temperature</a></code></li>
+<li><code><a title="badinka.Config.generation_tokens" href="#badinka.Config.generation_tokens">generation_tokens</a></code></li>
+<li><code><a title="badinka.Config.generation_topk" href="#badinka.Config.generation_topk">generation_topk</a></code></li>
+<li><code><a title="badinka.Config.generation_topp" href="#badinka.Config.generation_topp">generation_topp</a></code></li>
 <li><code><a title="badinka.Config.generation_url" href="#badinka.Config.generation_url">generation_url</a></code></li>
-<li><code><a title="badinka.Config.log" href="#badinka.Config.log">log</a></code></li>
-<li><code><a title="badinka.Config.log_config" href="#badinka.Config.log_config">log_config</a></code></li>
+<li><code><a title="badinka.Config.log_dump_at_exit" href="#badinka.Config.log_dump_at_exit">log_dump_at_exit</a></code></li>
+<li><code><a title="badinka.Config.log_immediate" href="#badinka.Config.log_immediate">log_immediate</a></code></li>
 <li><code><a title="badinka.Config.vector_store_path" href="#badinka.Config.vector_store_path">vector_store_path</a></code></li>
 </ul>
 </li>
@@ -1184,6 +1217,7 @@ def from_response(cls, resp):
 <li><code><a title="badinka.DocumentStore.append" href="#badinka.DocumentStore.append">append</a></code></li>
 <li><code><a title="badinka.DocumentStore.client" href="#badinka.DocumentStore.client">client</a></code></li>
 <li><code><a title="badinka.DocumentStore.collection" href="#badinka.DocumentStore.collection">collection</a></code></li>
+<li><code><a title="badinka.DocumentStore.configure" href="#badinka.DocumentStore.configure">configure</a></code></li>
 <li><code><a title="badinka.DocumentStore.extend" href="#badinka.DocumentStore.extend">extend</a></code></li>
 <li><code><a title="badinka.DocumentStore.query" href="#badinka.DocumentStore.query">query</a></code></li>
 <li><code><a title="badinka.DocumentStore.query_text" href="#badinka.DocumentStore.query_text">query_text</a></code></li>

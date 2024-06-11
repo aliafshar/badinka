@@ -13,7 +13,8 @@
 # limitations under the License.
 
 
-"""Configuration settings for BaDinka."""
+"""Configuration settings for BaDinka.
+"""
 
 from dataclasses import dataclass, field
 
@@ -25,36 +26,46 @@ class Config:
   """Configuration for all BaDinka activity."""
 
   #: The default Ollama model used for text generation.
-  generation_model_name: str = 'gemma'
+  generation_model: str = 'gemma'
 
   #: The default number of output tokens for generation.
-  generation_output_tokens: int = 64
+  generation_tokens: int = 64
 
-  #: The default Ollama model used for generating embeddings.
-  embeddings_model_name: str = 'mxbai-embed-large'
+  #: The default generation temperature
+  generation_temperature: float = 0.7
 
-  #: The Ollama URL used for embeddings.
-  embeddings_url: str = 'http://localhost:11434/api/embeddings'
+  #: The default generation top_k
+  generation_topk: int = 40
+
+  #: The default generation top_p
+  generation_topp: float = 0.9
 
   #: The Ollama URL used for generation.
   generation_url: str = 'http://localhost:11434/api/generate'
+
+  #: The default Ollama model used for generating embeddings.
+  embeddings_model: str = 'mxbai-embed-large'
+
+  #: The Ollama URL used for embeddings.
+  embeddings_url: str = 'http://localhost:11434/api/embeddings'
 
   #: The default vector store path. When using `:memory:` an in-memory-only
   #: store is used with no persistence. When a path is given, that path is used
   #: as a persistent store.
   vector_store_path: str = ':memory:'
 
-  #: Configuration for logging
-  log_config: LogConfig = field(default_factory=LogConfig)
+  #: Whether logging calls should be immediately dumped to stdout
+  log_immediate: bool = False
 
-  _log: Log = None
+  #: Whether logging should dump the entire log at exit
+  log_dump_at_exit: bool = False
 
-  @property
-  def log(self):
-    if not self._log:
-      self._log = Log(self.log_config)
-    return self._log
-
-
+  def __post_init__(self):
+    self.log = Log(
+        LogConfig(
+          immediate = self.log_immediate,
+          dump_at_exit = self.log_dump_at_exit,
+        ),
+    )
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

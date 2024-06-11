@@ -49,7 +49,7 @@ def test_template():
 def test_generate_from_prompt():
   p = badinka.Prompt(template='why is the sky {{q}}?')
   g = badinka.Generator(badinka.Config(
-    generation_model_name='orca-mini',
+    generation_model='orca-mini',
   ))
   g.generate_from_prompt(p, q='blue')
 
@@ -63,7 +63,7 @@ def test_generate_from_instruction():
       tone = 'amusing',
   )
   g = badinka.Generator(badinka.Config(
-    generation_model_name='orca-mini',
+    generation_model='orca-mini',
   ))
   g.generate_from_instruction(i, q='blue')
 
@@ -78,7 +78,7 @@ def test_generate_from_instruction_context():
       context = 'an apple a day keeps the doctor away',
   )
   g = badinka.Generator(badinka.Config(
-    generation_model_name='orca-mini',
+    generation_model='orca-mini',
   ))
   g.generate_from_instruction(i, q='healthy')
 

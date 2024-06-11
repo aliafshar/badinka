@@ -339,6 +339,67 @@ if __name__ == '__main__':
   main()
 ```
 
+## Calling an external tool from a prompt
+View/Download source: [tool0.py](examples/tool0.py)
+### Rendered prompt
+
+> You have the following tools available, if, and only if, you need to use
+> one of them, format your answer as :T:toolname:arguments, the arguments
+> should be in strict JSON format with an example provided for each tool, e.g.
+> for a tool called "name":"mytool", with "arguments":{"name": "string"}
+> 
+> :T:mytool:{"name":"string"}.
+> 
+> The format is very important because a computer will parse it strictly.
+> If you do not find a tool as the most appropriate way to reply, reply without
+> the use of the tool, using any other knowledge you have.
+> {
+>   "arguments": {
+>     "command": "string"
+>   },
+>   "description": "read a fortune",
+>   "name": "exec"
+> }
+> 
+> execute the command "fortune"
+
+
+### Output (e.g.)
+
+> O, what a tangled web we weave, When first we practice to deceive.
+>                     -- Sir Walter Scott, "Marmion"
+### Code
+```python
+"""
+
+import subprocess
+import badinka as bd
+
+class ExecTool(bd.Tool):
+  """A tool to execute arbitrary shell commands (!)"""
+
+  name = 'exec'
+  description = 'read a fortune'
+  arguments = {'command': 'string'}
+
+  def do(self, **kw):
+    return subprocess.check_output(
+        kw['command'], shell=True, encoding='utf-8')
+
+def main():
+  c = bd.Conductor()
+  reply = c.generate(
+      bd.Instruction(
+        query='execute the command "fortune"',
+        tools=[ExecTool()]
+      ),
+  )
+  print(reply.data)
+
+if __name__ == '__main__':
+  main()
+```
+
 ## Retrieval augmented generation from a text book
 View/Download source: [rag1.py](examples/rag1.py)
 This example fetches, parses and loads an open Human Geography textbook, and

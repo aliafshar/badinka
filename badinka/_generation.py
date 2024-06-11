@@ -31,13 +31,24 @@ class Options:
   #: The output format (only "json" is acceptable)
   json: bool = False
 
+  #: The generation temperature
+  temperature: float = None
+
+  #: The model to use for generation
+  model: str = None
+
   def as_dict(self, config: Config) -> dict[str, any]:
     """Generates the correct keywords for calling Ollama."""
     d = {
-        'num_predict': config.generation_output_tokens,
+        'num_predict': config.generation_tokens,
+        'temperature': config.generation_temperature,
+        'top_p': config.generation_topp,
+        'top_k': config.generation_topk,
     }
-    if self.tokens:
+    if self.tokens is not None:
       d['num_predict'] = self.tokens
+    if self.temperature is not None:
+      d['temperature'] = self.temperature
     if self.json:
       d['format'] = 'json'
     return d
@@ -90,7 +101,6 @@ class Instruction:
 
   #: The prompt that provides the last part of the instruction.
   prompt: Prompt = None
-
 
   #: The query that provides the last part of the instruction.
   #: Query is provided here as a prompt with no substitutions to save typing
@@ -196,7 +206,7 @@ class Generator:
       options = Options()
     self.config.log.debug('generate request', prompt=text, options=options)
     resp = ollama.generate(
-        model=self.config.generation_model_name,
+        model=options.model or self.config.generation_model,
         prompt=text,
         options=options.as_dict(self.config),
     )

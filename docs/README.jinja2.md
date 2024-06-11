@@ -61,6 +61,8 @@ badinka.Config(
 You can configure the default models and parameters for generation etc in the
 Config class.
 
+{{ config_instruction }}
+
 ```python
 {{ config }}
 ```

@@ -138,7 +138,7 @@ def query(q):
         inject = bd.Injection(),
     ),
     options = bd.Options(
-        output_tokens = 1024,
+        tokens = 1024,
     ),
   )
   print(reply.content)
@@ -152,7 +152,7 @@ def topiclist():
       'describe in one word or phrase what this text is about "{{context}}"'
   )
   for doc in conductor.docs.all():
-    resp = conductor.generate(p, context=doc.content)
+    resp = conductor.generate(p, options=bd.Options(tokens=8), context=doc.content)
     print(resp.content)
 
 
@@ -182,6 +182,7 @@ def main():
 
 
 if __name__ == '__main__':
+  #topiclist()
   main()
 
 

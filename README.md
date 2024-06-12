@@ -345,25 +345,25 @@ View/Download source: [chain0.py](examples/chain0.py)
 
 > > pick a 4-letter word
 >
-> < Yard
+> Yard
 >
-> I describe this word: Yard
+> > I describe this word: Yard
 >
-> O A yard is a unit of measurement commonly used to describe length or
-> O distance. It is equal to 3 feet or 0.914 meters. Yards are often used
-> O to measure the size of lawns, gardens, fields, or other outdoor
-> O spaces.
+> A yard is a unit of measurement commonly used to describe length or
+> distance. It is equal to 3 feet or 0.914 meters. Yards are often used
+> to measure the size of lawns, gardens, fields, or other outdoor
+> spaces.
 >
-> I You should behave as a poet.
-> I rephrase this: A yard is a unit of measurement commonly used to
-> I describe length or distance. It is equal to 3 feet or 0.914 meters.
-> I Yards are often used to measure the size of lawns, gardens, fields, or
-> I other outdoor spaces.
+> > You should behave as a poet.
+> > rephrase this: A yard is a unit of measurement commonly used to
+> > describe length or distance. It is equal to 3 feet or 0.914 meters.
+> > Yards are often used to measure the size of lawns, gardens, fields, or
+> > other outdoor spaces.
 >
-> O A yard, a measure of length untold,
-> O Three feet it stands, a story bold.
-> O From lawn to field, a verdant trace,
-> O Each yard a canvas, time and space.
+> A yard, a measure of length untold,
+> Three feet it stands, a story bold.
+> From lawn to field, a verdant trace,
+> Each yard a canvas, time and space.
 ### Code
 ```python
 import badinka as bd

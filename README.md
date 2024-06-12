@@ -339,6 +339,43 @@ if __name__ == '__main__':
   main()
 ```
 
+## Basic chaining generation
+View/Download source: [chain0.py](examples/chain0.py)
+### Input / Output (e.g.)
+
+> I pick a 4-letter word
+> O Yard
+> I describe this word: Yard
+> O A yard is a unit of measurement commonly used to describe length or
+> O distance. It is equal to 3 feet or 0.914 meters. Yards are often used
+> O to measure the size of lawns, gardens, fields, or other outdoor
+> O spaces.
+> I You should behave as a poet.
+> I rephrase this: A yard is a unit of measurement commonly used to
+> I describe length or distance. It is equal to 3 feet or 0.914 meters.
+> I Yards are often used to measure the size of lawns, gardens, fields, or
+> I other outdoor spaces.
+> O A yard, a measure of length untold,
+> O Three feet it stands, a story bold.
+> O From lawn to field, a verdant trace,
+> O Each yard a canvas, time and space.
+### Code
+```python
+import badinka as bd
+
+def main():
+  c = bd.Conductor()
+  reply = c.generate(bd.Chain([
+    bd.Instruction(prompt='pick a 4-letter word'),
+    bd.Instruction(prompt='describe this word: {{reply.data}}'),
+    bd.Instruction(role='a poet', prompt='rephrase this: {{reply.data}}'),
+  ]))
+  print(reply.content)
+
+if __name__ == '__main__':
+  main()
+```
+
 ## Calling an external tool from a prompt
 View/Download source: [tool0.py](examples/tool0.py)
 ### Rendered prompt
@@ -385,14 +422,16 @@ class ExecTool(bd.Tool):
         kw['command'], shell=True, encoding='utf-8')
 
 def main():
-  c = bd.Conductor()
+  c = bd.Conductor(bd.Config())
   reply = c.generate(
       bd.Instruction(
         query='execute the command "fortune"',
         tools=[ExecTool()]
       ),
   )
+  print(reply.content)
   print(reply.data)
+
 
 if __name__ == '__main__':
   main()

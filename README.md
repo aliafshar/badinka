@@ -343,9 +343,9 @@ if __name__ == '__main__':
 View/Download source: [chain0.py](examples/chain0.py)
 ### Input (I) / Output (O) (e.g.)
 
-> I pick a 4-letter word
+> [ pick a 4-letter word
 >
-> O Yard
+> ] Yard
 >
 > I describe this word: Yard
 >

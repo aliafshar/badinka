@@ -341,20 +341,25 @@ if __name__ == '__main__':
 
 ## Basic chaining generation
 View/Download source: [chain0.py](examples/chain0.py)
-### Input / Output (e.g.)
+### Input (I) / Output (O) (e.g.)
 
 > I pick a 4-letter word
+>
 > O Yard
+>
 > I describe this word: Yard
+>
 > O A yard is a unit of measurement commonly used to describe length or
 > O distance. It is equal to 3 feet or 0.914 meters. Yards are often used
 > O to measure the size of lawns, gardens, fields, or other outdoor
 > O spaces.
+>
 > I You should behave as a poet.
 > I rephrase this: A yard is a unit of measurement commonly used to
 > I describe length or distance. It is equal to 3 feet or 0.914 meters.
 > I Yards are often used to measure the size of lawns, gardens, fields, or
 > I other outdoor spaces.
+>
 > O A yard, a measure of length untold,
 > O Three feet it stands, a story bold.
 > O From lawn to field, a verdant trace,

@@ -341,13 +341,13 @@ if __name__ == '__main__':
 
 ## Basic chaining generation
 View/Download source: [chain0.py](examples/chain0.py)
-### Input (I) / Output (O) (e.g.)
+### Input / Output (e.g.)
 
 > > pick a 4-letter word
 >
 > Yard
 >
-> > I describe this word: Yard
+> > describe this word: Yard
 >
 > A yard is a unit of measurement commonly used to describe length or
 > distance. It is equal to 3 feet or 0.914 meters. Yards are often used

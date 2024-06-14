@@ -50,11 +50,12 @@ from ._conductor import Conductor
 from ._config import Config
 from ._documents import Document, DocumentStore, Query, DocumentList
 from ._generation import Generator, Prompt, Reply, Instruction, \
-    Options, Injection
-from ._logging import LogConfig
+    Options, Injection, Chain
+from ._tools import Tool
 
 
 __all__ = [
+    &#39;Chain&#39;,
     &#39;Conductor&#39;,
     &#39;Config&#39;,
     &#39;Document&#39;,
@@ -66,6 +67,7 @@ __all__ = [
     &#39;Prompt&#39;,
     &#39;Query&#39;,
     &#39;Reply&#39;,
+    &#39;Tool&#39;,
 
 ]
 
@@ -82,6 +84,29 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="badinka.Chain"><code class="flex name class">
+<span>class <span class="ident">Chain</span></span>
+<span>(</span><span>instructions: list[badinka._generation.Instruction])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Chain(instructions: list[badinka._generation.Instruction])</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Chain:
+
+  instructions: list[Instruction]</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="badinka.Chain.instructions"><code class="name">var <span class="ident">instructions</span> : list[badinka._generation.Instruction]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="badinka.Conductor"><code class="flex name class">
 <span>class <span class="ident">Conductor</span></span>
 <span>(</span><span>config: badinka._config.Config = None)</span>
@@ -125,6 +150,9 @@ __all__ = [
           generator_input.context = &#39;\n&#39;.join(d.content for d in docs)
         return self.generator.generate_from_instruction(
             generator_input,
+            options=options, **prompt_params)
+      case Chain():
+        return self.generator.generate_from_chain(generator_input,
             options=options, **prompt_params)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -182,6 +210,9 @@ __all__ = [
         generator_input.context = &#39;\n&#39;.join(d.content for d in docs)
       return self.generator.generate_from_instruction(
           generator_input,
+          options=options, **prompt_params)
+    case Chain():
+      return self.generator.generate_from_chain(generator_input,
           options=options, **prompt_params)</code></pre>
 </details>
 </dd>
@@ -596,12 +627,14 @@ extremely useful for:</p>
     if not options:
       options = Options()
     self.config.log.debug(&#39;generate request&#39;, prompt=text, options=options)
+    self.config.log.in_message(text)
     resp = ollama.generate(
         model=options.model or self.config.generation_model,
         prompt=text,
         options=options.as_dict(self.config),
     )
     reply = Reply.from_response(resp)
+    self.config.log.out_message(reply.content)
     self.config.log.debug(&#39;generate response&#39;, reply=reply)
     return reply
 
@@ -616,12 +649,48 @@ extremely useful for:</p>
       options: Options=None,
       **prompt_params) -&gt; Reply:
     &#34;&#34;&#34;Generate a response from a complete instruction.&#34;&#34;&#34;
+    instruction.rationalize()
     t = instruction.render(**prompt_params)
-    print(t)
-    return self.generate_from_text(text=t, options=options)</code></pre>
+    reply = self.generate_from_text(text=t, options=options)
+    for p in instruction.parsers:
+      if p.match(reply):
+        reply.data = p.parse(reply)
+        break
+    self.config.log.debug(&#39;parsed response&#39;, reply=reply)
+    return reply
+
+  def generate_from_chain(self, chain: Chain, options: Options=None,
+      **prompt_params):
+    &#34;&#34;&#34;Generate a response from a chain of instructions.&#34;&#34;&#34;
+    reply = None
+    for instruction in chain.instructions:
+      reply = self.generate_from_instruction(instruction, options,
+          reply=reply,
+          **prompt_params)
+    return reply</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
+<dt id="badinka.Generator.generate_from_chain"><code class="name flex">
+<span>def <span class="ident">generate_from_chain</span></span>(<span>self, chain: badinka._generation.Chain, options: badinka._generation.Options = None, **prompt_params)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate a response from a chain of instructions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_from_chain(self, chain: Chain, options: Options=None,
+    **prompt_params):
+  &#34;&#34;&#34;Generate a response from a chain of instructions.&#34;&#34;&#34;
+  reply = None
+  for instruction in chain.instructions:
+    reply = self.generate_from_instruction(instruction, options,
+        reply=reply,
+        **prompt_params)
+  return reply</code></pre>
+</details>
+</dd>
 <dt id="badinka.Generator.generate_from_instruction"><code class="name flex">
 <span>def <span class="ident">generate_from_instruction</span></span>(<span>self, instruction: badinka._generation.Instruction, options: badinka._generation.Options = None, **prompt_params) ‑> badinka._generation.Reply</span>
 </code></dt>
@@ -635,9 +704,15 @@ extremely useful for:</p>
     options: Options=None,
     **prompt_params) -&gt; Reply:
   &#34;&#34;&#34;Generate a response from a complete instruction.&#34;&#34;&#34;
+  instruction.rationalize()
   t = instruction.render(**prompt_params)
-  print(t)
-  return self.generate_from_text(text=t, options=options)</code></pre>
+  reply = self.generate_from_text(text=t, options=options)
+  for p in instruction.parsers:
+    if p.match(reply):
+      reply.data = p.parse(reply)
+      break
+  self.config.log.debug(&#39;parsed response&#39;, reply=reply)
+  return reply</code></pre>
 </details>
 </dd>
 <dt id="badinka.Generator.generate_from_prompt"><code class="name flex">
@@ -672,12 +747,14 @@ extremely useful for:</p>
   if not options:
     options = Options()
   self.config.log.debug(&#39;generate request&#39;, prompt=text, options=options)
+  self.config.log.in_message(text)
   resp = ollama.generate(
       model=options.model or self.config.generation_model,
       prompt=text,
       options=options.as_dict(self.config),
   )
   reply = Reply.from_response(resp)
+  self.config.log.out_message(reply.content)
   self.config.log.debug(&#39;generate response&#39;, reply=reply)
   return reply</code></pre>
 </details>
@@ -711,31 +788,24 @@ class Injection:
 </dd>
 <dt id="badinka.Instruction"><code class="flex name class">
 <span>class <span class="ident">Instruction</span></span>
-<span>(</span><span>prompt: badinka._generation.Prompt = None, query: str = None, inject: badinka._generation.Injection = None, role: str = None, tone: str = None, detail: str = None, context: str = None, template: badinka._generation.Prompt = &lt;factory&gt;)</span>
+<span>(</span><span>prompt: badinka._generation.Prompt | str = None, query: str = None, inject: badinka._generation.Injection = None, role: str = None, tone: str = None, detail: str = None, context: str = None, tools: list[badinka._tools.Tool] = &lt;factory&gt;, parsers: list[badinka._tools.Tool] = &lt;factory&gt;, template: badinka._generation.Prompt = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The instruction to generate for an LLM</p>
 <p>This is a high-level construct which contains a bunch of different parts to
 build a prompt for an LLM:</p>
-<ol>
-<li>
-<p>The prompt is the prompt that will generate the final query for the LLM.
+<ul>
+<li>The prompt is the prompt that will generate the final query for the LLM.
 This is a jinja2 template which can be substituted with parameters during
-the render.</p>
-</li>
-<li>
-<p>The context. You can populate this manually, or you can use the injection
-to automatically generate it from the document store based on the query.</p>
-</li>
-<li>
-<p>The role describes how you want the LLM to behave. This can be a person,
-such as "teacher" or describe the behavioural attributes of the LLM.</p>
-</li>
-<li>
-<p>Injection defines how the context will be populated from the document store
-with the query parameters.</p>
-</li>
-</ol></div>
+the render.</li>
+<li>The context. You can populate this manually, or you can use the injection
+to automatically generate it from the document store based on the query.</li>
+<li>The role describes how you want the LLM to behave. This can be a person,
+such as "teacher" or describe the behavioural attributes of the LLM.</li>
+<li>Tools define external tools that can be called by the generation.</li>
+<li>Injection defines how the context will be populated from the document store
+with the query parameters.</li>
+</ul></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -747,23 +817,21 @@ class Instruction:
   This is a high-level construct which contains a bunch of different parts to
   build a prompt for an LLM:
 
-  1. The prompt is the prompt that will generate the final query for the LLM.
-     This is a jinja2 template which can be substituted with parameters during
-     the render.
-
-  2. The context. You can populate this manually, or you can use the injection
-     to automatically generate it from the document store based on the query.
-
-  3. The role describes how you want the LLM to behave. This can be a person,
-     such as &#34;teacher&#34; or describe the behavioural attributes of the LLM.
-
-  4. Injection defines how the context will be populated from the document store
-     with the query parameters. 
+  * The prompt is the prompt that will generate the final query for the LLM.
+    This is a jinja2 template which can be substituted with parameters during
+    the render.
+  * The context. You can populate this manually, or you can use the injection
+    to automatically generate it from the document store based on the query.
+  * The role describes how you want the LLM to behave. This can be a person,
+    such as &#34;teacher&#34; or describe the behavioural attributes of the LLM.
+  * Tools define external tools that can be called by the generation.
+  * Injection defines how the context will be populated from the document store
+    with the query parameters. 
 
   &#34;&#34;&#34;
 
   #: The prompt that provides the last part of the instruction.
-  prompt: Prompt = None
+  prompt: Prompt|str = None
 
   #: The query that provides the last part of the instruction.
   #: Query is provided here as a prompt with no substitutions to save typing
@@ -791,6 +859,12 @@ class Instruction:
   #: with the rendered prompt.
   query: str = None
 
+  #: External tools to be called from the LLM
+  tools: list[Tool] = field(default_factory=list)
+
+  #: Parsers are response parsers
+  parsers: list[Tool] = field(default_factory=list)
+
   #: The template for the complete instruction. This prompt has a default which
   #: can be overriden here.
   template: Prompt = field(
@@ -798,9 +872,17 @@ class Instruction:
         template=default_instruction_template)
   )
 
+  def rationalize(self):
+    tool_parsers = [ToolParser(t) for t in self.tools]
+    self.parsers = tool_parsers + self.parsers
+
+
   def render_query(self, **kw) -&gt; str:
     &#34;&#34;&#34;Renders the query part of the prompt.&#34;&#34;&#34;
     if self.prompt:
+      match self.prompt:
+        case str():
+          self.prompt = Prompt(self.prompt)
       return self.prompt.render(**kw)
     return self.query
 
@@ -812,6 +894,7 @@ class Instruction:
         tone = self.tone,
         detail = self.detail,
         context = self.context,
+        tools = self.tools,
         query = q,
     )
     return p</code></pre>
@@ -832,7 +915,11 @@ Note: when an injection is provided this is overriden.</p></div>
 <dd>
 <div class="desc"><p>The parameters that control whether context is injected.</p></div>
 </dd>
-<dt id="badinka.Instruction.prompt"><code class="name">var <span class="ident">prompt</span> : badinka._generation.Prompt</code></dt>
+<dt id="badinka.Instruction.parsers"><code class="name">var <span class="ident">parsers</span> : list[badinka._tools.Tool]</code></dt>
+<dd>
+<div class="desc"><p>Parsers are response parsers</p></div>
+</dd>
+<dt id="badinka.Instruction.prompt"><code class="name">var <span class="ident">prompt</span> : badinka._generation.Prompt | str</code></dt>
 <dd>
 <div class="desc"><p>The prompt that provides the last part of the instruction.</p></div>
 </dd>
@@ -855,9 +942,27 @@ can be overriden here.</p></div>
 <dd>
 <div class="desc"><p>The tone that the generation should take.</p></div>
 </dd>
+<dt id="badinka.Instruction.tools"><code class="name">var <span class="ident">tools</span> : list[badinka._tools.Tool]</code></dt>
+<dd>
+<div class="desc"><p>External tools to be called from the LLM</p></div>
+</dd>
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="badinka.Instruction.rationalize"><code class="name flex">
+<span>def <span class="ident">rationalize</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rationalize(self):
+  tool_parsers = [ToolParser(t) for t in self.tools]
+  self.parsers = tool_parsers + self.parsers</code></pre>
+</details>
+</dd>
 <dt id="badinka.Instruction.render"><code class="name flex">
 <span>def <span class="ident">render</span></span>(<span>self, **kw) ‑> str</span>
 </code></dt>
@@ -875,6 +980,7 @@ can be overriden here.</p></div>
       tone = self.tone,
       detail = self.detail,
       context = self.context,
+      tools = self.tools,
       query = q,
   )
   return p</code></pre>
@@ -892,36 +998,233 @@ can be overriden here.</p></div>
 <pre><code class="python">def render_query(self, **kw) -&gt; str:
   &#34;&#34;&#34;Renders the query part of the prompt.&#34;&#34;&#34;
   if self.prompt:
+    match self.prompt:
+      case str():
+        self.prompt = Prompt(self.prompt)
     return self.prompt.render(**kw)
   return self.query</code></pre>
 </details>
 </dd>
 </dl>
 </dd>
-<dt id="badinka.LogConfig"><code class="flex name class">
+<dt id="badinka.Instruction"><code class="flex name class">
 <span>class <span class="ident">LogConfig</span></span>
-<span>(</span><span>immediate: bool = False, dump_at_exit: bool = False)</span>
+<span>(</span><span>prompt: badinka._generation.Prompt | str = None, query: str = None, inject: badinka._generation.Injection = None, role: str = None, tone: str = None, detail: str = None, context: str = None, tools: list[badinka._tools.Tool] = &lt;factory&gt;, parsers: list[badinka._tools.Tool] = &lt;factory&gt;, template: badinka._generation.Prompt = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>LogConfig(immediate: bool = False, dump_at_exit: bool = False)</p></div>
+<div class="desc"><p>The instruction to generate for an LLM</p>
+<p>This is a high-level construct which contains a bunch of different parts to
+build a prompt for an LLM:</p>
+<ul>
+<li>The prompt is the prompt that will generate the final query for the LLM.
+This is a jinja2 template which can be substituted with parameters during
+the render.</li>
+<li>The context. You can populate this manually, or you can use the injection
+to automatically generate it from the document store based on the query.</li>
+<li>The role describes how you want the LLM to behave. This can be a person,
+such as "teacher" or describe the behavioural attributes of the LLM.</li>
+<li>Tools define external tools that can be called by the generation.</li>
+<li>Injection defines how the context will be populated from the document store
+with the query parameters.</li>
+</ul></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@dataclass
-class LogConfig:
-  immediate: bool = False
-  dump_at_exit: bool = False</code></pre>
+class Instruction:
+  &#34;&#34;&#34;The instruction to generate for an LLM
+
+  This is a high-level construct which contains a bunch of different parts to
+  build a prompt for an LLM:
+
+  * The prompt is the prompt that will generate the final query for the LLM.
+    This is a jinja2 template which can be substituted with parameters during
+    the render.
+  * The context. You can populate this manually, or you can use the injection
+    to automatically generate it from the document store based on the query.
+  * The role describes how you want the LLM to behave. This can be a person,
+    such as &#34;teacher&#34; or describe the behavioural attributes of the LLM.
+  * Tools define external tools that can be called by the generation.
+  * Injection defines how the context will be populated from the document store
+    with the query parameters. 
+
+  &#34;&#34;&#34;
+
+  #: The prompt that provides the last part of the instruction.
+  prompt: Prompt|str = None
+
+  #: The query that provides the last part of the instruction.
+  #: Query is provided here as a prompt with no substitutions to save typing
+  #: when a plain prompt is needed.
+  query: str = &#39;&#39;
+
+  #: The parameters that control whether context is injected.
+  inject: Injection = None
+
+  #: The behavioural role that the generation will take.
+  role: str = None
+
+  #: The tone that the generation should take.
+  tone: str = None
+
+  #: The detail at which to generate
+  detail: str = None
+
+  #: The prompt context. If provided, the LLM will be given the context and
+  #: instructed to use it to generate its response.
+  #: Note: when an injection is provided this is overriden.
+  context: str = None
+
+  #: The hard-coded text query. If the prompt is provided this will be overriden
+  #: with the rendered prompt.
+  query: str = None
+
+  #: External tools to be called from the LLM
+  tools: list[Tool] = field(default_factory=list)
+
+  #: Parsers are response parsers
+  parsers: list[Tool] = field(default_factory=list)
+
+  #: The template for the complete instruction. This prompt has a default which
+  #: can be overriden here.
+  template: Prompt = field(
+      default_factory=lambda: Prompt(
+        template=default_instruction_template)
+  )
+
+  def rationalize(self):
+    tool_parsers = [ToolParser(t) for t in self.tools]
+    self.parsers = tool_parsers + self.parsers
+
+
+  def render_query(self, **kw) -&gt; str:
+    &#34;&#34;&#34;Renders the query part of the prompt.&#34;&#34;&#34;
+    if self.prompt:
+      match self.prompt:
+        case str():
+          self.prompt = Prompt(self.prompt)
+      return self.prompt.render(**kw)
+    return self.query
+
+  def render(self, **kw) -&gt; str:
+    &#34;&#34;&#34;Renders the complete prompt.&#34;&#34;&#34;
+    q = self.render_query(**kw)
+    p = self.template.render(
+        role = self.role,
+        tone = self.tone,
+        detail = self.detail,
+        context = self.context,
+        tools = self.tools,
+        query = q,
+    )
+    return p</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="badinka.LogConfig.dump_at_exit"><code class="name">var <span class="ident">dump_at_exit</span> : bool</code></dt>
+<dt id="badinka.Instruction.context"><code class="name">var <span class="ident">context</span> : str</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The prompt context. If provided, the LLM will be given the context and
+instructed to use it to generate its response.
+Note: when an injection is provided this is overriden.</p></div>
 </dd>
-<dt id="badinka.LogConfig.immediate"><code class="name">var <span class="ident">immediate</span> : bool</code></dt>
+<dt id="badinka.Instruction.detail"><code class="name">var <span class="ident">detail</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The detail at which to generate</p></div>
+</dd>
+<dt id="badinka.Instruction.inject"><code class="name">var <span class="ident">inject</span> : badinka._generation.Injection</code></dt>
+<dd>
+<div class="desc"><p>The parameters that control whether context is injected.</p></div>
+</dd>
+<dt id="badinka.Instruction.parsers"><code class="name">var <span class="ident">parsers</span> : list[badinka._tools.Tool]</code></dt>
+<dd>
+<div class="desc"><p>Parsers are response parsers</p></div>
+</dd>
+<dt id="badinka.Instruction.prompt"><code class="name">var <span class="ident">prompt</span> : badinka._generation.Prompt | str</code></dt>
+<dd>
+<div class="desc"><p>The prompt that provides the last part of the instruction.</p></div>
+</dd>
+<dt id="badinka.Instruction.query"><code class="name">var <span class="ident">query</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The query that provides the last part of the instruction.
+Query is provided here as a prompt with no substitutions to save typing
+when a plain prompt is needed.</p></div>
+</dd>
+<dt id="badinka.Instruction.role"><code class="name">var <span class="ident">role</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The behavioural role that the generation will take.</p></div>
+</dd>
+<dt id="badinka.Instruction.template"><code class="name">var <span class="ident">template</span> : badinka._generation.Prompt</code></dt>
+<dd>
+<div class="desc"><p>The template for the complete instruction. This prompt has a default which
+can be overriden here.</p></div>
+</dd>
+<dt id="badinka.Instruction.tone"><code class="name">var <span class="ident">tone</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The tone that the generation should take.</p></div>
+</dd>
+<dt id="badinka.Instruction.tools"><code class="name">var <span class="ident">tools</span> : list[badinka._tools.Tool]</code></dt>
+<dd>
+<div class="desc"><p>External tools to be called from the LLM</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="badinka.Instruction.rationalize"><code class="name flex">
+<span>def <span class="ident">rationalize</span></span>(<span>self)</span>
+</code></dt>
 <dd>
 <div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rationalize(self):
+  tool_parsers = [ToolParser(t) for t in self.tools]
+  self.parsers = tool_parsers + self.parsers</code></pre>
+</details>
+</dd>
+<dt id="badinka.Instruction.render"><code class="name flex">
+<span>def <span class="ident">render</span></span>(<span>self, **kw) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Renders the complete prompt.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render(self, **kw) -&gt; str:
+  &#34;&#34;&#34;Renders the complete prompt.&#34;&#34;&#34;
+  q = self.render_query(**kw)
+  p = self.template.render(
+      role = self.role,
+      tone = self.tone,
+      detail = self.detail,
+      context = self.context,
+      tools = self.tools,
+      query = q,
+  )
+  return p</code></pre>
+</details>
+</dd>
+<dt id="badinka.Instruction.render_query"><code class="name flex">
+<span>def <span class="ident">render_query</span></span>(<span>self, **kw) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Renders the query part of the prompt.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render_query(self, **kw) -&gt; str:
+  &#34;&#34;&#34;Renders the query part of the prompt.&#34;&#34;&#34;
+  if self.prompt:
+    match self.prompt:
+      case str():
+        self.prompt = Prompt(self.prompt)
+    return self.prompt.render(**kw)
+  return self.query</code></pre>
+</details>
 </dd>
 </dl>
 </dd>
@@ -1063,7 +1366,7 @@ two are combined.</p></div>
 </dd>
 <dt id="badinka.Reply"><code class="flex name class">
 <span>class <span class="ident">Reply</span></span>
-<span>(</span><span>content: str, model_name: str, date: datetime.datetime, duration: int, eval_duration: int, load_duration: int, prompt_duration: int)</span>
+<span>(</span><span>content: str, data: <built-in function any>, model_name: str, date: datetime.datetime, duration: int, eval_duration: int, load_duration: int, prompt_duration: int, tool: badinka._tools.Tool = None, parser: badinka._parsing.Parser = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Generated text from the LLM.</p></div>
@@ -1077,6 +1380,9 @@ class Reply:
 
   #: The text content of the reply.
   content: str
+
+  #: The data is the parsed content of the reply
+  data: any
 
   #: The model that was used for generation.
   model_name: str
@@ -1096,11 +1402,18 @@ class Reply:
   #: The duration of the actual prompt.
   prompt_duration: int
 
+  #: Tool
+  tool: Tool = None
+
+  #: Parser
+  parser: Parser = None
+
   @classmethod
   def from_response(cls, resp):
     &#34;&#34;&#34;Create this instance from the Ollama response.&#34;&#34;&#34;
     return cls(
         content=resp[&#39;response&#39;],
+        data=resp[&#39;response&#39;],
         date=datetime.datetime.fromisoformat(resp[&#39;created_at&#39;]),
         model_name=resp[&#39;model&#39;],
         duration=resp[&#39;total_duration&#39;],
@@ -1114,6 +1427,10 @@ class Reply:
 <dt id="badinka.Reply.content"><code class="name">var <span class="ident">content</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The text content of the reply.</p></div>
+</dd>
+<dt id="badinka.Reply.data"><code class="name">var <span class="ident">data</span> : <built-in function any></code></dt>
+<dd>
+<div class="desc"><p>The data is the parsed content of the reply</p></div>
 </dd>
 <dt id="badinka.Reply.date"><code class="name">var <span class="ident">date</span> : datetime.datetime</code></dt>
 <dd>
@@ -1135,9 +1452,17 @@ class Reply:
 <dd>
 <div class="desc"><p>The model that was used for generation.</p></div>
 </dd>
+<dt id="badinka.Reply.parser"><code class="name">var <span class="ident">parser</span> : badinka._parsing.Parser</code></dt>
+<dd>
+<div class="desc"><p>Parser</p></div>
+</dd>
 <dt id="badinka.Reply.prompt_duration"><code class="name">var <span class="ident">prompt_duration</span> : int</code></dt>
 <dd>
 <div class="desc"><p>The duration of the actual prompt.</p></div>
+</dd>
+<dt id="badinka.Reply.tool"><code class="name">var <span class="ident">tool</span> : badinka._tools.Tool</code></dt>
+<dd>
+<div class="desc"><p>Tool</p></div>
 </dd>
 </dl>
 <h3>Static methods</h3>
@@ -1156,6 +1481,7 @@ def from_response(cls, resp):
   &#34;&#34;&#34;Create this instance from the Ollama response.&#34;&#34;&#34;
   return cls(
       content=resp[&#39;response&#39;],
+      data=resp[&#39;response&#39;],
       date=datetime.datetime.fromisoformat(resp[&#39;created_at&#39;]),
       model_name=resp[&#39;model&#39;],
       duration=resp[&#39;total_duration&#39;],
@@ -1163,6 +1489,80 @@ def from_response(cls, resp):
       load_duration=resp[&#39;load_duration&#39;],
       prompt_duration=resp[&#39;prompt_eval_duration&#39;],
   )</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="badinka.Tool"><code class="flex name class">
+<span>class <span class="ident">Tool</span></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Tool:
+
+  name: str
+  description: str
+  arguments: dict[str, any]
+
+  def do(self, **kw):
+    raise NotImplementedError
+
+  def as_dict(self):
+    return {
+        &#39;name&#39;: self.name,
+        &#39;description&#39;: self.description,
+        &#39;arguments&#39;: self.arguments,
+    }</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="badinka.Tool.arguments"><code class="name">var <span class="ident">arguments</span> : dict[str, any]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="badinka.Tool.description"><code class="name">var <span class="ident">description</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="badinka.Tool.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="badinka.Tool.as_dict"><code class="name flex">
+<span>def <span class="ident">as_dict</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def as_dict(self):
+  return {
+      &#39;name&#39;: self.name,
+      &#39;description&#39;: self.description,
+      &#39;arguments&#39;: self.arguments,
+  }</code></pre>
+</details>
+</dd>
+<dt id="badinka.Tool.do"><code class="name flex">
+<span>def <span class="ident">do</span></span>(<span>self, **kw)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def do(self, **kw):
+  raise NotImplementedError</code></pre>
 </details>
 </dd>
 </dl>
@@ -1178,6 +1578,12 @@ def from_response(cls, resp):
 <ul id="index">
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
+<li>
+<h4><code><a title="badinka.Chain" href="#badinka.Chain">Chain</a></code></h4>
+<ul class="">
+<li><code><a title="badinka.Chain.instructions" href="#badinka.Chain.instructions">instructions</a></code></li>
+</ul>
+</li>
 <li>
 <h4><code><a title="badinka.Conductor" href="#badinka.Conductor">Conductor</a></code></h4>
 <ul class="">
@@ -1226,6 +1632,7 @@ def from_response(cls, resp):
 <li>
 <h4><code><a title="badinka.Generator" href="#badinka.Generator">Generator</a></code></h4>
 <ul class="">
+<li><code><a title="badinka.Generator.generate_from_chain" href="#badinka.Generator.generate_from_chain">generate_from_chain</a></code></li>
 <li><code><a title="badinka.Generator.generate_from_instruction" href="#badinka.Generator.generate_from_instruction">generate_from_instruction</a></code></li>
 <li><code><a title="badinka.Generator.generate_from_prompt" href="#badinka.Generator.generate_from_prompt">generate_from_prompt</a></code></li>
 <li><code><a title="badinka.Generator.generate_from_text" href="#badinka.Generator.generate_from_text">generate_from_text</a></code></li>
@@ -1243,20 +1650,34 @@ def from_response(cls, resp):
 <li><code><a title="badinka.Instruction.context" href="#badinka.Instruction.context">context</a></code></li>
 <li><code><a title="badinka.Instruction.detail" href="#badinka.Instruction.detail">detail</a></code></li>
 <li><code><a title="badinka.Instruction.inject" href="#badinka.Instruction.inject">inject</a></code></li>
+<li><code><a title="badinka.Instruction.parsers" href="#badinka.Instruction.parsers">parsers</a></code></li>
 <li><code><a title="badinka.Instruction.prompt" href="#badinka.Instruction.prompt">prompt</a></code></li>
 <li><code><a title="badinka.Instruction.query" href="#badinka.Instruction.query">query</a></code></li>
+<li><code><a title="badinka.Instruction.rationalize" href="#badinka.Instruction.rationalize">rationalize</a></code></li>
 <li><code><a title="badinka.Instruction.render" href="#badinka.Instruction.render">render</a></code></li>
 <li><code><a title="badinka.Instruction.render_query" href="#badinka.Instruction.render_query">render_query</a></code></li>
 <li><code><a title="badinka.Instruction.role" href="#badinka.Instruction.role">role</a></code></li>
 <li><code><a title="badinka.Instruction.template" href="#badinka.Instruction.template">template</a></code></li>
 <li><code><a title="badinka.Instruction.tone" href="#badinka.Instruction.tone">tone</a></code></li>
+<li><code><a title="badinka.Instruction.tools" href="#badinka.Instruction.tools">tools</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="badinka.LogConfig" href="#badinka.LogConfig">LogConfig</a></code></h4>
-<ul class="">
-<li><code><a title="badinka.LogConfig.dump_at_exit" href="#badinka.LogConfig.dump_at_exit">dump_at_exit</a></code></li>
-<li><code><a title="badinka.LogConfig.immediate" href="#badinka.LogConfig.immediate">immediate</a></code></li>
+<h4><code><a title="badinka.Instruction" href="#badinka.Instruction">Instruction</a></code></h4>
+<ul class="two-column">
+<li><code><a title="badinka.Instruction.context" href="#badinka.Instruction.context">context</a></code></li>
+<li><code><a title="badinka.Instruction.detail" href="#badinka.Instruction.detail">detail</a></code></li>
+<li><code><a title="badinka.Instruction.inject" href="#badinka.Instruction.inject">inject</a></code></li>
+<li><code><a title="badinka.Instruction.parsers" href="#badinka.Instruction.parsers">parsers</a></code></li>
+<li><code><a title="badinka.Instruction.prompt" href="#badinka.Instruction.prompt">prompt</a></code></li>
+<li><code><a title="badinka.Instruction.query" href="#badinka.Instruction.query">query</a></code></li>
+<li><code><a title="badinka.Instruction.rationalize" href="#badinka.Instruction.rationalize">rationalize</a></code></li>
+<li><code><a title="badinka.Instruction.render" href="#badinka.Instruction.render">render</a></code></li>
+<li><code><a title="badinka.Instruction.render_query" href="#badinka.Instruction.render_query">render_query</a></code></li>
+<li><code><a title="badinka.Instruction.role" href="#badinka.Instruction.role">role</a></code></li>
+<li><code><a title="badinka.Instruction.template" href="#badinka.Instruction.template">template</a></code></li>
+<li><code><a title="badinka.Instruction.tone" href="#badinka.Instruction.tone">tone</a></code></li>
+<li><code><a title="badinka.Instruction.tools" href="#badinka.Instruction.tools">tools</a></code></li>
 </ul>
 </li>
 <li>
@@ -1280,13 +1701,26 @@ def from_response(cls, resp):
 <h4><code><a title="badinka.Reply" href="#badinka.Reply">Reply</a></code></h4>
 <ul class="two-column">
 <li><code><a title="badinka.Reply.content" href="#badinka.Reply.content">content</a></code></li>
+<li><code><a title="badinka.Reply.data" href="#badinka.Reply.data">data</a></code></li>
 <li><code><a title="badinka.Reply.date" href="#badinka.Reply.date">date</a></code></li>
 <li><code><a title="badinka.Reply.duration" href="#badinka.Reply.duration">duration</a></code></li>
 <li><code><a title="badinka.Reply.eval_duration" href="#badinka.Reply.eval_duration">eval_duration</a></code></li>
 <li><code><a title="badinka.Reply.from_response" href="#badinka.Reply.from_response">from_response</a></code></li>
 <li><code><a title="badinka.Reply.load_duration" href="#badinka.Reply.load_duration">load_duration</a></code></li>
 <li><code><a title="badinka.Reply.model_name" href="#badinka.Reply.model_name">model_name</a></code></li>
+<li><code><a title="badinka.Reply.parser" href="#badinka.Reply.parser">parser</a></code></li>
 <li><code><a title="badinka.Reply.prompt_duration" href="#badinka.Reply.prompt_duration">prompt_duration</a></code></li>
+<li><code><a title="badinka.Reply.tool" href="#badinka.Reply.tool">tool</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="badinka.Tool" href="#badinka.Tool">Tool</a></code></h4>
+<ul class="">
+<li><code><a title="badinka.Tool.arguments" href="#badinka.Tool.arguments">arguments</a></code></li>
+<li><code><a title="badinka.Tool.as_dict" href="#badinka.Tool.as_dict">as_dict</a></code></li>
+<li><code><a title="badinka.Tool.description" href="#badinka.Tool.description">description</a></code></li>
+<li><code><a title="badinka.Tool.do" href="#badinka.Tool.do">do</a></code></li>
+<li><code><a title="badinka.Tool.name" href="#badinka.Tool.name">name</a></code></li>
 </ul>
 </li>
 </ul>

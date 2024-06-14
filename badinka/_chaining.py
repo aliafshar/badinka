@@ -12,35 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Minimalist AI orchestration library for local LLMs"""
+"""Instruction Chaining support"""
 
-__version__ = '0.1'
+from dataclasses import dataclass, field
 
-
-from ._conductor import Conductor
-from ._config import Config
-from ._documents import Document, DocumentStore, Query, DocumentList
-from ._generation import Generator, Prompt, Reply, Instruction, \
-    Options, Injection, Chain
-from ._tools import Tool
+from ._instruction import Instruction
 
 
-__all__ = [
-    'Chain',
-    'Conductor',
-    'Config',
-    'Document',
-    'DocumentStore',
-    'Generator',
-    'Injection',
-    'Instruction',
-    'LogConfig',
-    'Prompt',
-    'Query',
-    'Reply',
-    'Tool',
+@dataclass
+class Chain:
 
-]
+  instructions: list[Instruction]
+
+
 
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

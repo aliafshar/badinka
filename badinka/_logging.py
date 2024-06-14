@@ -20,6 +20,7 @@ import enum
 import inspect
 import atexit
 import pprint
+import textwrap
 from datetime import timedelta, datetime
 from dataclasses import dataclass, field
 
@@ -40,8 +41,9 @@ class Ansi:
   END = "\033[0m"
 
   def __call__(self, text, color):
-    return f'{style}{text}{Colors.END}'
+    return f'{color}{text}{Colors.END}'
 
+ansi = Ansi()
 
 class Colors:
   """Handle ANSI color codes """
@@ -174,6 +176,22 @@ class Log:
 
   def error(self, message='', **kw):
     self.log(LogLevel.ERROR, message, **kw)
+
+  def message(self, block, prefix):
+    blines = block.strip().splitlines()
+    olines = []
+    for line in blines:
+      for wline in textwrap.wrap(line, 70):
+        olines.append(f'{prefix} {wline}')
+    print('\n'.join(olines))
+
+  def in_message(self, block):
+    self.message(block, ansi('I', Ansi.GREEN))
+
+  def out_message(self, block):
+    self.message(block, ansi('O', Ansi.BLUE))
+
+
 
   @property
   def p_date(self):

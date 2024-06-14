@@ -12,35 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Minimalist AI orchestration library for local LLMs"""
-
-__version__ = '0.1'
+"""Response Parsing"""
 
 
-from ._conductor import Conductor
-from ._config import Config
-from ._documents import Document, DocumentStore, Query, DocumentList
-from ._generation import Generator, Prompt, Reply, Instruction, \
-    Options, Injection, Chain
-from ._tools import Tool
+from dataclasses import dataclass, field
 
+class Parser:
 
-__all__ = [
-    'Chain',
-    'Conductor',
-    'Config',
-    'Document',
-    'DocumentStore',
-    'Generator',
-    'Injection',
-    'Instruction',
-    'LogConfig',
-    'Prompt',
-    'Query',
-    'Reply',
-    'Tool',
+  def match(self, output) -> bool:
+    return False
 
-]
+  def parse(self, output):
+    raise NotImplementedError
+  
 
 
 # vim: ft=python sw=2 ts=2 sts=2 tw=80

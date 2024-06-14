@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from ._base import Configurable
 from ._config import Config
 from ._documents import Document, DocumentStore, Query
-from ._generation import Generator, Prompt, Reply, Instruction, Options
+from ._generation import Generator, Prompt, Reply, Instruction, Options, Chain
   
 
 class Conductor(Configurable):
@@ -54,6 +54,9 @@ class Conductor(Configurable):
           generator_input.context = '\n'.join(d.content for d in docs)
         return self.generator.generate_from_instruction(
             generator_input,
+            options=options, **prompt_params)
+      case Chain():
+        return self.generator.generate_from_chain(generator_input,
             options=options, **prompt_params)
 
 

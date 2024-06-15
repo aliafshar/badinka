@@ -46,7 +46,7 @@ def main():
       inject = bd.Injection(),
     ),
     options = bd.Options(
-      output_tokens=32,
+      tokens=32,
     ),
   )
   print(reply.content)

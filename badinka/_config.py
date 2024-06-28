@@ -26,7 +26,7 @@ class Config:
   """Configuration for all BaDinka activity."""
 
   #: The default Ollama model used for text generation.
-  generation_model: str = 'gemma'
+  generation_model: str = 'gemma2'
 
   #: The default number of output tokens for generation.
   generation_tokens: int = 64

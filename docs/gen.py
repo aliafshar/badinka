@@ -136,6 +136,7 @@ def read_examples():
       'rag0',
       'chain0',
       'tool0',
+      'rag2',
       'rag1',
   ]
   sys.path.append('examples')
